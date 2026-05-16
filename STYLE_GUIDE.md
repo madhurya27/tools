@@ -10,15 +10,18 @@ Design reference for all tools in this repo. Follow these patterns to keep the c
 |-------|-----|-------|
 | `bg-base` | `#0f172a` | Page background, inset surfaces |
 | `bg-card` | `#1e293b` | Cards, panels |
+| `bg-card-hover` | `#2a1520` | Card hover background |
 | `border` | `#334155` | Borders, dividers |
 | `text-primary` | `#f8fafc` | Headings |
 | `text-body` | `#e2e8f0` | Body text |
 | `text-muted` | `#64748b` | Labels, subtitles, placeholders |
 | `text-secondary` | `#94a3b8` | Secondary labels |
-| `accent` | `#3b82f6` | Primary buttons, focus rings, highlights |
-| `accent-hover` | `#2563eb` | Hover state for accent |
+| `accent` | `#DD2D4A` | Primary buttons, focus rings, highlights |
+| `accent-hover` | `#880D1E` | Hover state for accent |
+| `accent-light` | `#F26A8D` | Letter/character highlights |
+| `accent-soft` | `#F49CBB` | Phonetic word text, soft highlights |
+| `accent-pale` | `#CBEEF3` | Confirmation states (e.g. "Copied!") |
 | `danger` | `#ef4444` | Errors, unknowns |
-| `success` | `#4ade80` | Confirmation states (e.g. "Copied!") |
 
 ---
 
@@ -53,7 +56,7 @@ padding: 1.5rem;
 
 ### Primary button
 ```css
-background: #3b82f6;
+background: #DD2D4A;
 color: #fff;
 border: none;
 border-radius: 6px;
@@ -62,7 +65,7 @@ font-size: 0.875rem;
 font-weight: 600;
 cursor: pointer;
 ```
-Hover: `background: #2563eb`
+Hover: `background: #880D1E`
 
 ### Secondary button
 ```css
@@ -81,7 +84,7 @@ color: #f1f5f9;
 padding: 0.75rem 1rem;
 outline: none;
 ```
-Focus: `border-color: #3b82f6`
+Focus: `border-color: #DD2D4A`
 
 ### Section label
 ```html
@@ -157,7 +160,7 @@ Copy this as the starting point for every new tool:
     }
 
     button {
-      background: #3b82f6;
+      background: #DD2D4A;
       color: #fff;
       border: none;
       border-radius: 6px;
@@ -168,7 +171,7 @@ Copy this as the starting point for every new tool:
       transition: background 0.2s;
     }
 
-    button:hover { background: #2563eb; }
+    button:hover { background: #880D1E; }
 
     button.secondary {
       background: #334155;
