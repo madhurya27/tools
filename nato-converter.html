@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NATO Phonetic Alphabet Converter</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.25rem;
+      color: #f8fafc;
+    }
+
+    .subtitle {
+      font-size: 0.875rem;
+      color: #64748b;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 640px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #94a3b8;
+      margin-bottom: 0.5rem;
+    }
+
+    textarea {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: #f1f5f9;
+      font-size: 1.1rem;
+      padding: 0.75rem 1rem;
+      resize: vertical;
+      min-height: 80px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    textarea:focus { border-color: #3b82f6; }
+    textarea::placeholder { color: #475569; }
+
+    .controls {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    button {
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.5rem 1.1rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover { background: #2563eb; }
+
+    button.secondary {
+      background: #334155;
+      color: #94a3b8;
+    }
+
+    button.secondary:hover { background: #475569; color: #e2e8f0; }
+
+    #output-section { display: none; }
+
+    #output-section.visible { display: block; }
+
+    .output-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    #copy-btn {
+      font-size: 0.75rem;
+      padding: 0.3rem 0.75rem;
+      background: #334155;
+      color: #94a3b8;
+    }
+
+    #copy-btn:hover { background: #475569; color: #e2e8f0; }
+    #copy-btn.copied { background: #166534; color: #4ade80; }
+
+    #output {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .word-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      min-width: 80px;
+    }
+
+    .original {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #3b82f6;
+      text-transform: uppercase;
+      line-height: 1;
+    }
+
+    .phonetic {
+      font-size: 0.7rem;
+      color: #94a3b8;
+      margin-top: 0.25rem;
+      text-align: center;
+    }
+
+    .space-marker {
+      display: flex;
+      align-items: center;
+      color: #334155;
+      font-size: 1.2rem;
+      padding: 0 0.1rem;
+      align-self: center;
+    }
+
+    .unknown {
+      color: #ef4444;
+    }
+  </style>
+</head>
+<body>
+  <h1>NATO Phonetic Converter</h1>
+  <p class="subtitle">Spell it out like a pro</p>
+
+  <div class="card">
+    <label for="input">Enter text</label>
+    <textarea id="input" placeholder="Type or paste text here..." autofocus></textarea>
+
+    <div class="controls">
+      <button onclick="convert()">Convert</button>
+      <button class="secondary" onclick="clearAll()">Clear</button>
+    </div>
+
+    <div id="output-section">
+      <div class="output-label">
+        <label style="margin:0">Phonetic output</label>
+        <button id="copy-btn" onclick="copyText()">Copy text</button>
+      </div>
+      <div id="output"></div>
+    </div>
+  </div>
+
+  <script>
+    const NATO = {
+      A: 'Alpha', B: 'Bravo', C: 'Charlie', D: 'Delta', E: 'Echo',
+      F: 'Foxtrot', G: 'Golf', H: 'Hotel', I: 'India', J: 'Juliet',
+      K: 'Kilo', L: 'Lima', M: 'Mike', N: 'November', O: 'Oscar',
+      P: 'Papa', Q: 'Quebec', R: 'Romeo', S: 'Sierra', T: 'Tango',
+      U: 'Uniform', V: 'Victor', W: 'Whiskey', X: 'X-ray', Y: 'Yankee',
+      Z: 'Zulu',
+      '0': 'Zero', '1': 'One', '2': 'Two', '3': 'Three', '4': 'Four',
+      '5': 'Five', '6': 'Six', '7': 'Seven', '8': 'Eight', '9': 'Nine'
+    };
+
+    function convert() {
+      const text = document.getElementById('input').value;
+      if (!text.trim()) return;
+
+      const output = document.getElementById('output');
+      const section = document.getElementById('output-section');
+      output.innerHTML = '';
+
+      const chars = text.toUpperCase().split('');
+      let i = 0;
+
+      while (i < chars.length) {
+        const ch = chars[i];
+
+        if (ch === ' ' || ch === '\n' || ch === '\t') {
+          if (output.lastChild && !output.lastChild.classList.contains('space-marker')) {
+            const sep = document.createElement('span');
+            sep.className = 'space-marker';
+            sep.textContent = '|';
+            output.appendChild(sep);
+          }
+          i++;
+          continue;
+        }
+
+        const group = document.createElement('div');
+        group.className = 'word-group';
+
+        const orig = document.createElement('span');
+        orig.className = 'original';
+        orig.textContent = ch;
+
+        const phon = document.createElement('span');
+        phon.className = 'phonetic';
+
+        if (NATO[ch]) {
+          phon.textContent = NATO[ch];
+        } else {
+          phon.textContent = ch;
+          phon.classList.add('unknown');
+        }
+
+        group.appendChild(orig);
+        group.appendChild(phon);
+        output.appendChild(group);
+        i++;
+      }
+
+      section.classList.add('visible');
+    }
+
+    function clearAll() {
+      document.getElementById('input').value = '';
+      document.getElementById('output').innerHTML = '';
+      document.getElementById('output-section').classList.remove('visible');
+      document.getElementById('input').focus();
+    }
+
+    function copyText() {
+      const text = document.getElementById('input').value.toUpperCase().split('').map(ch => {
+        if (ch === ' ' || ch === '\n' || ch === '\t') return ' / ';
+        return NATO[ch] || ch;
+      }).join(' ').replace(/ \/ \s*/g, ' / ').trim();
+
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copy-btn');
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = 'Copy text';
+          btn.classList.remove('copied');
+        }, 1800);
+      });
+    }
+
+    document.getElementById('input').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        convert();
+      }
+    });
+  </script>
+</body>
+</html>
