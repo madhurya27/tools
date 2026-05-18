@@ -214,7 +214,7 @@
 </head>
 <body>
   <div class="top-bar">
-    <button class="theme-toggle" onclick="toggleTheme()">☀ Light</button>
+    <button class="theme-toggle" onclick="toggleTheme()">◐ Light</button>
   </div>
 
   <h1>Travel Itinerary</h1>
@@ -260,7 +260,7 @@
     }
     function applyTheme(t) {
       html.setAttribute('data-theme', t);
-      themeBtn.textContent = t === 'light' ? '☽ Dark' : '☀ Light';
+      themeBtn.textContent = t === 'light' ? '◑ Dark' : '◐ Light';
     }
     function toggleTheme() {
       const next = getEffectiveTheme() === 'light' ? 'dark' : 'light';
