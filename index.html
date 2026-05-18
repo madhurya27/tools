@@ -4,110 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tools</title>
+  <link rel="stylesheet" href="theme.css">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg-base:              #0f172a;
-      --bg-card:              #1e293b;
-      --border:               #334155;
-      --border-hover:         #DD2D4A;
-      --bg-card-hover:        #2a1520;
-      --text-primary:         #f8fafc;
-      --text-body:            #e2e8f0;
-      --text-muted:           #64748b;
-      --btn-sec-bg:           #334155;
-      --btn-sec-color:        #94a3b8;
-      --btn-sec-hover-bg:     #475569;
-      --btn-sec-hover-color:  #e2e8f0;
+      --content-max-width: 860px;
+      --body-padding:      3rem 1rem;
     }
 
-    @media (prefers-color-scheme: light) {
-      :root:not([data-theme="dark"]) {
-        --bg-base:              #fff5f7;
-        --bg-card:              #ffffff;
-        --border:               #f0c0cc;
-        --bg-card-hover:        #fdeef1;
-        --text-primary:         #1a050a;
-        --text-body:            #4a1520;
-        --text-muted:           #9b6070;
-        --btn-sec-bg:           #f0dde2;
-        --btn-sec-color:        #7a4055;
-        --btn-sec-hover-bg:     #e8ccd4;
-        --btn-sec-hover-color:  #4a1520;
-      }
-    }
-
-    [data-theme="light"] {
-      --bg-base:              #fff5f7;
-      --bg-card:              #ffffff;
-      --border:               #f0c0cc;
-      --bg-card-hover:        #fdeef1;
-      --text-primary:         #1a050a;
-      --text-body:            #4a1520;
-      --text-muted:           #9b6070;
-      --btn-sec-bg:           #f0dde2;
-      --btn-sec-color:        #7a4055;
-      --btn-sec-hover-bg:     #e8ccd4;
-      --btn-sec-hover-color:  #4a1520;
-    }
-
-    body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: var(--bg-base);
-      color: var(--text-body);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 3rem 1rem;
-      transition: background 0.2s, color 0.2s;
-    }
-
-    .top-bar {
-      width: 100%;
-      max-width: 860px;
-      display: flex;
-      justify-content: flex-end;
-      margin-bottom: 1.5rem;
-    }
-
-    .theme-toggle {
-      background: var(--btn-sec-bg);
-      color: var(--btn-sec-color);
-      border: none;
-      border-radius: 6px;
-      padding: 0.35rem 0.75rem;
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s, color 0.2s;
-    }
-
-    .theme-toggle:hover {
-      background: var(--btn-sec-hover-bg);
-      color: var(--btn-sec-hover-color);
-    }
-
-    h1 {
-      font-size: 2rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: 0.4rem;
-    }
-
-    .subtitle {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-      margin-bottom: 2.5rem;
-    }
+    h1 { font-size: 2rem; margin-bottom: 0.4rem; }
+    .subtitle { font-size: 0.9rem; margin-bottom: 2.5rem; }
+    .top-bar { margin-bottom: 1.5rem; }
 
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
       gap: 1rem;
       width: 100%;
-      max-width: 860px;
+      max-width: var(--content-max-width);
     }
 
     a.tool-card {
@@ -122,27 +35,13 @@
     }
 
     a.tool-card:hover {
-      border-color: var(--border-hover);
+      border-color: var(--accent);
       background: var(--bg-card-hover);
     }
 
-    .tool-icon {
-      font-size: 1.75rem;
-      margin-bottom: 0.75rem;
-    }
-
-    .tool-name {
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: 0.3rem;
-    }
-
-    .tool-desc {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      line-height: 1.5;
-    }
+    .tool-icon { font-size: 1.75rem; margin-bottom: 0.75rem; }
+    .tool-name { font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.3rem; }
+    .tool-desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; }
   </style>
 </head>
 <body>
