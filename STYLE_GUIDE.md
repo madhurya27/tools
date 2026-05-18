@@ -16,6 +16,8 @@ Accent colors (`--accent`, `--accent-hover`, `--accent-light`, `--accent-soft`, 
 
 ## Colors
 
+Palette: https://colorhunt.co/palette/f8ede3bdd2b6a2b29f798777
+
 ### Dark theme (default)
 
 | Token | Hex | Usage |
@@ -86,60 +88,7 @@ Accent colors (`--accent`, `--accent-hover`, `--accent-light`, `--accent-soft`, 
 
 ## Page template
 
-Copy this as the starting point for every new tool:
-
-```html
-<!DOCTYPE html>
-<html lang="en" data-theme="auto">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tool Name</title>
-  <link rel="stylesheet" href="theme.css">
-  <style>
-    /* tool-specific styles here */
-  </style>
-</head>
-<body>
-  <div class="top-bar">
-    <button class="theme-toggle" onclick="toggleTheme()">☀ Light</button>
-  </div>
-
-  <h1>Tool Name</h1>
-  <p class="subtitle">One-line description</p>
-
-  <div class="card">
-    <!-- tool content here -->
-  </div>
-
-  <script>
-    const html = document.documentElement;
-    const btn = document.querySelector('.theme-toggle');
-
-    function getEffectiveTheme() {
-      const stored = localStorage.getItem('theme');
-      if (stored === 'light' || stored === 'dark') return stored;
-      return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-    }
-
-    function applyTheme(theme) {
-      html.setAttribute('data-theme', theme);
-      btn.textContent = theme === 'light' ? '☽ Dark' : '☀ Light';
-    }
-
-    function toggleTheme() {
-      const next = getEffectiveTheme() === 'light' ? 'dark' : 'light';
-      localStorage.setItem('theme', next);
-      applyTheme(next);
-    }
-
-    applyTheme(getEffectiveTheme());
-
-    // tool logic here
-  </script>
-</body>
-</html>
-```
+Copy `template.html` as the starting point for every new tool.
 
 ---
 
