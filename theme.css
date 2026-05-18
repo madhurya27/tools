@@ -86,12 +86,16 @@ body {
   color: var(--btn-sec-color);
   border: none;
   border-radius: 6px;
-  padding: 0.35rem 0.75rem;
-  font-size: 0.8rem;
-  font-weight: 600;
+  padding: 0.4rem;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-width: 0;
 }
+.theme-toggle svg { display: block; }
 
 .theme-toggle:hover {
   background: var(--btn-sec-hover-bg);
