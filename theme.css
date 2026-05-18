@@ -91,6 +91,8 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
+  min-width: 5.5rem;
+  text-align: center;
 }
 
 .theme-toggle:hover {
