@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Travel Itinerary</title>
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    :root { --content-max-width: 860px; }
+
+    textarea {
+      width: 100%;
+      min-height: 280px;
+      background: var(--bg-inset);
+      color: var(--text-body);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: inherit;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      resize: vertical;
+    }
+    textarea:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+    textarea::placeholder { color: var(--text-muted); }
+
+    .input-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .input-hint {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 0.6rem;
+      line-height: 1.5;
+    }
+
+    #itinerary-view { display: none; width: 100%; max-width: var(--content-max-width); }
+
+    .action-bar {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .confirm-msg { font-size: 0.8rem; color: var(--text-muted); }
+
+    .itinerary-doc {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+    }
+
+    .trip-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .trip-meta {
+      display: flex;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 1.75rem;
+    }
+
+    .days-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 580px) { .days-grid { grid-template-columns: 1fr; } }
+
+    .day-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .day-header {
+      background: var(--bg-inset);
+      padding: 0.55rem 0.9rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .day-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+    }
+
+    .day-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-top: 0.1rem;
+    }
+
+    .day-events {
+      padding: 0.7rem 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    .event {
+      display: grid;
+      grid-template-columns: 1.2rem 3.5rem 1fr auto;
+      gap: 0.4rem;
+      align-items: baseline;
+      font-size: 0.82rem;
+      line-height: 1.4;
+    }
+    .event.no-time { grid-template-columns: 1.2rem 1fr auto; }
+
+    /* Edit mode */
+    .delete-btn {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1rem;
+      line-height: 1;
+      padding: 0;
+      cursor: pointer;
+      align-self: center;
+      justify-self: end;
+    }
+    .delete-btn:hover { color: var(--danger); background: none; }
+    .edit-mode .delete-btn { display: block; }
+
+    .add-event-btn {
+      display: none;
+      width: calc(100% - 1.8rem);
+      margin: 0.4rem 0.9rem 0.1rem;
+      padding: 0.25rem 0.5rem;
+      background: none;
+      border: 1px dashed var(--border);
+      border-radius: 6px;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      text-align: left;
+      cursor: pointer;
+    }
+    .add-event-btn:hover { color: var(--text-secondary); border-color: var(--accent); background: none; }
+    .edit-mode .add-event-btn { display: block; }
+
+    .edit-mode .event-icon { cursor: pointer; border-radius: 3px; user-select: none; }
+    .edit-mode .event-icon:hover { background: var(--bg-card-hover); }
+
+    .edit-mode [contenteditable] {
+      border-bottom: 1px dashed var(--border);
+      cursor: text;
+      min-width: 1em;
+      border-radius: 2px 2px 0 0;
+    }
+    .edit-mode [contenteditable]:focus {
+      outline: none;
+      border-bottom-color: var(--accent);
+      background: var(--bg-inset);
+      padding: 0 2px;
+    }
+    .edit-mode .itinerary-doc { border-color: var(--accent); }
+
+    .event-icon { text-align: center; }
+    .event-time { color: var(--text-muted); font-size: 0.75rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .event-text { color: var(--text-body); }
+
+    .empty-day { font-size: 0.8rem; color: var(--text-muted); font-style: italic; }
+
+    .parse-warning {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      background: var(--bg-inset);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1rem;
+    }
+
+    @media print {
+      body { padding: 0; background: white; color: #111; min-height: unset; }
+      .top-bar, .action-bar, h1, .subtitle { display: none !important; }
+      #input-view { display: none !important; }
+      #itinerary-view { display: block !important; max-width: 100%; }
+      .parse-warning { display: none !important; }
+
+      .itinerary-doc { border: none; padding: 0.5cm 0; border-radius: 0; background: white; }
+      .trip-title { color: #111; font-size: 1.3rem; }
+      .trip-meta { color: #555; }
+      .days-grid { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+      .day-card { border-color: #ccc; break-inside: avoid; }
+      .day-header { background: #f0f0f0; }
+      .day-label { color: #666; }
+      .day-name { color: #111; font-size: 0.85rem; }
+      .event { font-size: 0.78rem; }
+      .event-text { color: #333; }
+      .event-time { color: #666; }
+      .empty-day { color: #888; }
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <button class="theme-toggle" onclick="toggleTheme()">☀ Light</button>
+  </div>
+
+  <h1>Travel Itinerary</h1>
+  <p class="subtitle">Paste your itinerary or travel confirmation emails</p>
+
+  <div id="input-view" style="width:100%;max-width:var(--content-max-width)">
+    <div class="card">
+      <label for="raw-input">Itinerary or confirmation emails</label>
+      <textarea id="raw-input" placeholder="Paste a flight or hotel confirmation email, a Day 1 / Day 2 itinerary, or mix of both. Multiple emails can be pasted together."></textarea>
+      <p class="input-hint">Works with: flight confirmation emails · hotel booking emails · Day 1 / Day 2 itineraries · anything with dates and travel details</p>
+      <div class="input-actions">
+        <button onclick="parse()">Visualize →</button>
+        <button class="secondary" onclick="loadExample('structured')">Itinerary example</button>
+        <button class="secondary" onclick="loadExample('email')">Email example</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="itinerary-view">
+    <div class="action-bar">
+      <button class="secondary" onclick="showInput()">← Back</button>
+      <button id="edit-toggle" class="secondary" onclick="toggleEditMode()">Edit</button>
+      <button onclick="window.print()">Print / Save PDF</button>
+      <button class="secondary" onclick="copyLink()">Copy shareable link</button>
+      <span id="copy-confirm" class="confirm-msg" style="display:none">Link copied!</span>
+    </div>
+    <div id="parse-warning" class="parse-warning" style="display:none"></div>
+    <div class="itinerary-doc">
+      <div class="trip-title" id="trip-title"></div>
+      <div class="trip-meta" id="trip-meta"></div>
+      <div class="days-grid" id="days-grid"></div>
+    </div>
+  </div>
+
+  <script>
+    // ─── Theme ────────────────────────────────────────────────────────────────
+    const html = document.documentElement;
+    const themeBtn = document.querySelector('.theme-toggle');
+    function getEffectiveTheme() {
+      const s = localStorage.getItem('theme');
+      if (s === 'light' || s === 'dark') return s;
+      return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    }
+    function applyTheme(t) {
+      html.setAttribute('data-theme', t);
+      themeBtn.textContent = t === 'light' ? '☽ Dark' : '☀ Light';
+    }
+    function toggleTheme() {
+      const next = getEffectiveTheme() === 'light' ? 'dark' : 'light';
+      localStorage.setItem('theme', next);
+      applyTheme(next);
+    }
+    applyTheme(getEffectiveTheme());
+
+    let rawText = '';
+
+    // ─── Date / Time Utilities ─────────────────────────────────────────────────
+    const MONTH_MAP = {
+      jan:0, january:0, feb:1, february:1, mar:2, march:2,
+      apr:3, april:3, may:4, jun:5, june:5, jul:6, july:6,
+      aug:7, august:7, sep:8, september:8, oct:9, october:9,
+      nov:10, november:10, dec:11, december:11
+    };
+    const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const MONTH_NAMES = ['January','February','March','April','May','June',
+                         'July','August','September','October','November','December'];
+
+    function parseDate(s) {
+      if (!s || typeof s !== 'string') return null;
+      const MPAT = 'jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?';
+      let m;
+
+      // "June 3, 2025" / "Jun 3rd" / "June 3"
+      m = s.match(new RegExp(`\\b(${MPAT})\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:[,\\s]+(\\d{4}))?\\b`, 'i'));
+      if (m) return _mkDate(MONTH_MAP[m[1].toLowerCase().replace(/[^a-z]/g,'').slice(0,3)], parseInt(m[2]), m[3] ? parseInt(m[3]) : _guessYear(parseInt(m[2]), MONTH_MAP[m[1].toLowerCase().replace(/[^a-z]/g,'').slice(0,3)]));
+
+      // "3 June 2025" / "3rd June"
+      m = s.match(new RegExp(`\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(${MPAT})(?:[,\\s]+(\\d{4}))?\\b`, 'i'));
+      if (m) return _mkDate(MONTH_MAP[m[2].toLowerCase().replace(/[^a-z]/g,'').slice(0,3)], parseInt(m[1]), m[3] ? parseInt(m[3]) : _guessYear(parseInt(m[1]), MONTH_MAP[m[2].toLowerCase().replace(/[^a-z]/g,'').slice(0,3)]));
+
+      // "2025-06-03" / "2025/06/03"
+      m = s.match(/\b(\d{4})[-\/](\d{2})[-\/](\d{2})\b/);
+      if (m) return _mkDate(parseInt(m[2])-1, parseInt(m[3]), parseInt(m[1]));
+
+      // "06/03/2025" MM/DD/YYYY
+      m = s.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/);
+      if (m) return _mkDate(parseInt(m[1])-1, parseInt(m[2]), parseInt(m[3]));
+
+      return null;
+    }
+
+    function _mkDate(mo, day, yr) {
+      if (mo == null || mo < 0 || mo > 11 || day < 1 || day > 31 || yr < 2000 || yr > 2050) return null;
+      return new Date(yr, mo, day);
+    }
+
+    function _guessYear(day, mo) {
+      const now = new Date();
+      const yr = now.getFullYear();
+      const candidate = new Date(yr, mo, day);
+      // If the date is more than 60 days in the past, assume next year
+      return (now - candidate) / 86400000 > 60 ? yr + 1 : yr;
+    }
+
+    function parseTime(s) {
+      if (!s) return '';
+      let m = s.match(/\b(\d{1,2}):(\d{2})\s*(am|pm)?\b/i);
+      if (m) {
+        let h = parseInt(m[1]), min = m[2];
+        const ap = (m[3] || '').toUpperCase();
+        if (ap === 'PM' && h < 12) h += 12;
+        if (ap === 'AM' && h === 12) h = 0;
+        return `${String(h).padStart(2,'0')}:${min}`;
+      }
+      m = s.match(/\b(\d{1,2})\s*(am|pm)\b/i);
+      if (m) {
+        let h = parseInt(m[1]);
+        const ap = m[2].toUpperCase();
+        if (ap === 'PM' && h < 12) h += 12;
+        if (ap === 'AM' && h === 12) h = 0;
+        return `${String(h).padStart(2,'0')}:00`;
+      }
+      return '';
+    }
+
+    function formatDate(date) {
+      if (!date) return 'Unknown date';
+      return `${DAY_NAMES[date.getDay()]}, ${MONTH_NAMES[date.getMonth()]} ${date.getDate()}`;
+    }
+
+    function dateKey(date) {
+      if (!date) return '_unknown';
+      return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+    }
+
+    // ─── Email Mode: Proximity Search ─────────────────────────────────────────
+    // Search near line idx, backward-biased for close distances
+    function findDateNear(lines, idx, lookBack=2, lookAhead=4) {
+      let d = parseDate(lines[idx]);
+      if (d) return d;
+      for (let b = 1; b <= lookBack; b++) {
+        if (idx - b >= 0) { d = parseDate(lines[idx-b]); if (d) return d; }
+      }
+      for (let f = 1; f <= lookAhead; f++) {
+        if (idx + f < lines.length) { d = parseDate(lines[idx+f]); if (d) return d; }
+      }
+      return null;
+    }
+
+    function findTimeNear(lines, idx, lookBack=1, lookAhead=4) {
+      let t = parseTime(lines[idx]);
+      if (t) return t;
+      for (let b = 1; b <= lookBack; b++) {
+        if (idx - b >= 0) { t = parseTime(lines[idx-b]); if (t) return t; }
+      }
+      for (let f = 1; f <= lookAhead; f++) {
+        if (idx + f < lines.length) { t = parseTime(lines[idx+f]); if (t) return t; }
+      }
+      return '';
+    }
+
+    // ─── Hotel Extraction ──────────────────────────────────────────────────────
+    const HOTEL_WORDS = /\b(hotel|resort|inn|suites?|lodge|palace|hostel|villa|pension|ryokan|b&b|airbnb|hyatt|marriott|hilton|sheraton|westin|ritz|intercontinental|sofitel|novotel|radisson|renaissance|doubletree|hampton|holiday\s+inn|four\s+seasons)\b/i;
+
+    function findHotelName(lines, anchorIdx) {
+      const window = lines.slice(Math.max(0, anchorIdx-15), Math.min(lines.length, anchorIdx+3));
+
+      // Pattern 1: explicit "Hotel: Name" label
+      for (const line of window) {
+        const m = line.match(/^(?:hotel(?:\s+name)?|property|accommodation)\s*[:\-–]\s*(.{3,70})/i);
+        if (m) return m[1].trim();
+      }
+
+      // Pattern 2: "... at [Hotel Name]" — booking portals list hotel like
+      // "Room Type Preference at The Grand at Moon Palace" or "Staying at Hilton X"
+      for (const line of window) {
+        const m = line.match(/(?:room\s+type\b.*?\bat|stay(?:ing)?\s+at|check(?:ing)?\s+in\s+at)\s+(.{3,80}?)(?:\s{2,}|$)/i);
+        if (m) return m[1].trim();
+      }
+
+      // Pattern 3: line (or left column of two-column line) containing a hotel word
+      for (const line of window) {
+        const trimmed = line.trim();
+        if (!trimmed || parseDate(trimmed)) continue;
+        // Split wide lines on 2+ spaces and check each column
+        const cols = trimmed.split(/\s{2,}|\t+/).map(s => s.trim()).filter(Boolean);
+        for (const col of cols) {
+          if (col.length < 3 || col.length > 100 || parseDate(col)) continue;
+          if (HOTEL_WORDS.test(col)) return col.replace(/^(?:the|a|an)\s+/i, '').trim();
+        }
+      }
+
+      return null;
+    }
+
+    function extractHotelEvents(lines) {
+      const events = [];
+      const seen = new Set();
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+
+        // Check-in (skip baggage check-in)
+        // lookBack=0: booking emails put the date on the same line or AFTER the keyword, not before
+        if (/\bcheck[\s\-]?in\b/i.test(line) && !/\b(bag|baggage|luggage|online)\b/i.test(line)) {
+          const date = findDateNear(lines, i, 0, 3);
+          if (date) {
+            const key = `in-${dateKey(date)}`;
+            if (!seen.has(key)) {
+              seen.add(key);
+              const name = findHotelName(lines, i);
+              const time = parseTime(line) || parseTime(lines[i+1] || '');
+              events.push({ type:'hotel-in', date, time, text: name ? `Check in: ${name}` : 'Check in', icon:'🏨' });
+            }
+          }
+        }
+
+        // Check-out
+        if (/\bcheck[\s\-]?out\b/i.test(line)) {
+          const date = findDateNear(lines, i, 0, 3);
+          if (date) {
+            const key = `out-${dateKey(date)}`;
+            if (!seen.has(key)) {
+              seen.add(key);
+              const name = findHotelName(lines, i);
+              const time = parseTime(line) || parseTime(lines[i+1] || '');
+              events.push({ type:'hotel-out', date, time, text: name ? `Check out: ${name}` : 'Check out', icon:'🏨' });
+            }
+          }
+        }
+
+        // "Arrival:" / "Departure:" used by some hotels — only in hotel context
+        if (/^\s*arrival\s*[:\-]/i.test(line) || /^\s*departure\s*[:\-]/i.test(line)) {
+          const ctx = lines.slice(Math.max(0,i-12), Math.min(lines.length,i+12)).join('\n');
+          if (!HOTEL_WORDS.test(ctx) && !/\bcheck[\s\-]?(?:in|out)\b/i.test(ctx)) continue;
+
+          const date = findDateNear(lines, i, 0, 3);
+          if (!date) continue;
+
+          const isCheckin = /arrival/i.test(line);
+          const key = `${isCheckin?'in':'out'}-${dateKey(date)}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            const name = findHotelName(lines, i);
+            const label = isCheckin ? 'Check in' : 'Check out';
+            events.push({ type: isCheckin?'hotel-in':'hotel-out', date, time:'', text: name ? `${label}: ${name}` : label, icon:'🏨' });
+          }
+        }
+      }
+
+      return events;
+    }
+
+    // ─── Flight Extraction ─────────────────────────────────────────────────────
+    // Common airline IATA codes to avoid false positives on random 2-letter combos
+    const AIRLINE_CODES = new Set([
+      'AA','UA','DL','WN','B6','AS','NK','F9','G4','SY','HA',
+      'AC','WS','TS','PD','BA','VS','EI','U2','FR','W6','BE',
+      'AF','KL','LH','LX','OS','AY','SK','AZ','TP','IB','VY',
+      'EK','QR','EY','TK','SV','RJ','MS','ET','KQ',
+      'SQ','CX','TG','MH','GA','PR','CI','BR','OZ','KE','NH','JL',
+      'QF','NZ','JQ','TT','VA','LA','G3','AD','CM','AV','AM','MX',
+    ]);
+
+    function looksLikeFlightNum(letters, digits) {
+      return (AIRLINE_CODES.has(letters) || /^[A-Z][A-Z0-9]$/.test(letters)) && /^\d{1,4}$/.test(digits);
+    }
+
+    function flightNumFromContext(ctx) {
+      // "Flight AA100", "Flight: AA 100"
+      let m = ctx.match(/\bflight\s*(?:#|no\.?|number)?\s*:?\s*([A-Z][A-Z0-9])\s*(\d{1,4})\b/i);
+      if (m && looksLikeFlightNum(m[1].toUpperCase(), m[2])) return m[1].toUpperCase() + m[2];
+      // Standalone known airline code + digits
+      m = ctx.match(/\b([A-Z]{2})\s*(\d{3,4})\b/);
+      if (m && AIRLINE_CODES.has(m[1])) return m[1] + m[2];
+      return '';
+    }
+
+    function extractFlightEvents(lines) {
+      const events = [];
+      const seen = new Set();
+      const seenFlightNums = new Set(); // prevent duplicate entries per flight number
+
+      function addFlight(date, time, text) {
+        const key = `${dateKey(date)}-${text}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          const fnMatch = text.match(/\b([A-Z]{2}\d{1,4})\b/);
+          if (fnMatch) seenFlightNums.add(fnMatch[1]);
+          events.push({ type:'flight', date, time, text, icon:'✈' });
+        }
+      }
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+
+        // ── Pattern 1: Route arrow "JFK → NRT" ────────────────────────────────
+        const routeMatch = line.match(/\b([A-Z]{3})\s*(?:→|➔|⇒|–>|->|—>)\s*([A-Z]{3})\b/) ||
+                           line.match(/\b([A-Z]{3})\s+to\s+([A-Z]{3})\b/);
+        if (routeMatch) {
+          const route = `${routeMatch[1]} → ${routeMatch[2]}`;
+          const date = findDateNear(lines, i);
+          const time = findTimeNear(lines, i);
+          const ctx = lines.slice(Math.max(0,i-4), Math.min(lines.length,i+8)).join(' ');
+          const fn = flightNumFromContext(ctx);
+          addFlight(date, time, fn ? `${route} · ${fn}` : route);
+          continue;
+        }
+
+        // ── Pattern 4: "Flight N of N UA1054" block (United, Delta, etc.) ───────
+        // Two-column layout: departure info left, arrival info right, sep by 2+ spaces
+        const flightBlockMatch = line.match(/\bflight\s+\d+\s+of\s+\d+\s+([A-Z]{2}\d{1,4})\b/i);
+        if (flightBlockMatch) {
+          const fn = flightBlockMatch[1].toUpperCase();
+          let departDate = null, departTime = '', departCode = '', arriveCode = '';
+
+          for (const bl of lines.slice(i+1, Math.min(lines.length, i+6))) {
+            const cols = bl.split(/\s{2,}|\t+/).map(s => s.trim()).filter(Boolean);
+            const left = cols[0] || '';
+            if (!departDate) {
+              const d = parseDate(left);
+              if (d) { departDate = d; continue; }
+            }
+            if (!departTime) {
+              const t = parseTime(left);
+              if (t) { departTime = t; continue; }
+            }
+            if (!departCode) {
+              const c1 = left.match(/\(([A-Z]{3})\)/);
+              if (c1) {
+                departCode = c1[1];
+                const c2 = cols[1] && cols[1].match(/\(([A-Z]{3})\)/);
+                arriveCode = c2 ? c2[1] : '';
+              }
+            }
+          }
+
+          const route = departCode && arriveCode ? `${departCode} → ${arriveCode}` : departCode;
+          const text = [route, fn].filter(Boolean).join(' · ');
+          if (departDate) addFlight(departDate, departTime, text || 'Flight');
+          continue;
+        }
+
+        // ── Pattern 2: Explicit "Flight AA100" line ───────────────────────────
+        // Only runs if Pattern 1/3/4 didn't already capture this flight number
+        const explicitFlight = line.match(/\bflight\s*(?:#|no\.?|number)?\s*:?\s*([A-Z][A-Z0-9])\s*(\d{1,4})\b/i);
+        if (explicitFlight) {
+          const fn = explicitFlight[1].toUpperCase() + explicitFlight[2];
+          if (looksLikeFlightNum(explicitFlight[1].toUpperCase(), explicitFlight[2]) && !seenFlightNums.has(fn)) {
+            const date = findDateNear(lines, i, 5, 4); // broader lookback to cross blank lines
+            const time = findTimeNear(lines, i);
+            const ctx = lines.slice(Math.max(0,i-6), Math.min(lines.length,i+6)).join(' ');
+            const routeNearby = ctx.match(/\b([A-Z]{3})\s*(?:→|➔|–>|->)\s*([A-Z]{3})\b/);
+            const route = routeNearby ? `${routeNearby[1]} → ${routeNearby[2]}` : '';
+            if (date) addFlight(date, time, route ? `${route} · ${fn}` : fn);
+          }
+          continue;
+        }
+
+        // ── Pattern 3: "DEPARTING" / "DEPARTURE" section header ───────────────
+        if (/^(?:depart(?:ing|ure|s)?|outbound)\b/i.test(line)) {
+          const fwdLines = lines.slice(i, Math.min(lines.length, i+10));
+          const fwdText  = fwdLines.join(' ');
+          const airMatch = fwdText.match(/\b([A-Z]{3})\b/);
+          if (!airMatch) continue;
+
+          const date = findDateNear(lines, i, 1, 6);
+          const time = findTimeNear(lines, i, 1, 6);
+
+          // Find destination airport: locate "arriv" keyword then look for
+          // uppercase-only code (no /i to avoid "New" matching [A-Z]{3})
+          const arrCtx = lines.slice(i+1, Math.min(lines.length, i+25)).join('\n');
+          const arrPos = arrCtx.search(/\barriv/i);
+          const dest = arrPos >= 0
+            ? (arrCtx.slice(arrPos).match(/\b([A-Z]{3})\b/) || [])[1] || ''
+            : '';
+          const route = dest ? `${airMatch[1]} → ${dest}` : airMatch[1];
+
+          const allCtx = lines.slice(Math.max(0,i-3), Math.min(lines.length,i+20)).join(' ');
+          const fn = flightNumFromContext(allCtx);
+          const text = [route, fn].filter(Boolean).join(' · ');
+          if (text || date) addFlight(date, time, text || 'Flight');
+        }
+      }
+
+      // Drop any events that couldn't be assigned a date — they're noise
+      return events.filter(ev => ev.date !== null);
+    }
+
+    // ─── Build Day Cards from Extracted Events ────────────────────────────────
+    function buildDaysFromEvents(events) {
+      events.sort((a, b) => {
+        if (!a.date && !b.date) return 0;
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+        if (a.date - b.date !== 0) return a.date - b.date;
+        return (a.time || '').localeCompare(b.time || '');
+      });
+
+      const dayMap = new Map();
+      for (const ev of events) {
+        const key = dateKey(ev.date);
+        if (!dayMap.has(key)) dayMap.set(key, { date: ev.date, events: [] });
+        dayMap.get(key).events.push({ icon: ev.icon, text: ev.text, time: ev.time || '' });
+      }
+
+      const days = [];
+      let n = 1;
+      for (const [, dayData] of dayMap) {
+        days.push({
+          label: dayData.date ? `Day ${n++}` : '',
+          name: formatDate(dayData.date),
+          events: dayData.events,
+        });
+      }
+      return days;
+    }
+
+    // ─── Email Mode ────────────────────────────────────────────────────────────
+    function parseEmails(text) {
+      const lines = text.split('\n').map(l => l.trim());
+      const hotelEvents  = extractHotelEvents(lines);
+      const flightEvents = extractFlightEvents(lines);
+      const allEvents = [...flightEvents, ...hotelEvents];
+      if (allEvents.length === 0) return null;
+
+      const days = buildDaysFromEvents(allEvents);
+
+      // Best-effort title from email subject line patterns
+      let title = 'My Trip';
+      for (const line of lines.slice(0, 30)) {
+        const m = line.match(/(?:your (?:trip|flight|booking|reservation) (?:to|from|for)|booking confirmed[:\s]+|confirmation\s+(?:for|details?|summary)\s*[:\-]?\s*)(.{3,60})/i);
+        if (m) { title = m[1].trim().replace(/[.!]+$/, ''); break; }
+      }
+
+      return { title, days, mode: 'email' };
+    }
+
+    // ─── Structured Mode (Day 1 / Day 2 / weekday headers) ────────────────────
+    const DAY_HEADER_PATTERNS = [
+      /^day\s*\d+/i,
+      /^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i,
+      /^(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)\s+\d+/i,
+      /^\d{1,2}[\/\-]\d{1,2}(\/\d{2,4})?\b/,
+    ];
+
+    function isDayHeader(line) { return DAY_HEADER_PATTERNS.some(p => p.test(line)); }
+    function isSeparatorLine(line) { return /^[-–—=*#\s]+$/.test(line); }
+
+    function classifyEvent(raw) {
+      let text = raw.replace(/^[\s\-•*·◦→▶]+/, '').replace(/^\d+\.\s+/, '').trim();
+      if (!text) return null;
+
+      const timeMatch = text.match(/^(\d{1,2}[h:]\d{0,2}\s*(?:am|pm)?)\s*[-–:·]?\s*/i);
+      const time = timeMatch ? normalizeTime(timeMatch[1]) : '';
+      if (timeMatch) text = text.slice(timeMatch[0].length).trim();
+
+      const periodMatch = !time && text.match(/^(morning|afternoon|evening|night)\s*[-–:]\s*/i);
+      const period = periodMatch ? periodMatch[1][0].toUpperCase() + periodMatch[1].slice(1).toLowerCase() : '';
+      if (periodMatch) text = text.slice(periodMatch[0].length).trim();
+
+      if (!text) return null;
+
+      const lower = text.toLowerCase();
+      let icon = '📍';
+      if (/\bflight\b|\bfly\b|\bflying\b|airport|departs?|arrives?|\b[A-Z]{2}\d{3,4}\b/.test(text)) icon = '✈';
+      else if (/hotel|check.?in|check.?out|hostel|airbnb|accommodation|resort|inn|lodge|\bstay\b/.test(lower)) icon = '🏨';
+      else if (/breakfast|lunch|dinner|brunch|restaurant|café|cafe|bar|eatery|\bdine\b|\beat\b/.test(lower)) icon = '🍽';
+      else if (/\btrain\b|\bsubway\b|\bmetro\b|\btram\b|\bbus\b|\btaxi\b|\buber\b|\blyft\b|transfer|ferry|cruise|\bdrive\b/.test(lower)) icon = '🚌';
+      else if (/museum|gallery|temple|shrine|palace|castle|\bpark\b|beach|\bhike\b|trek|tour|visit|explore|market/.test(lower)) icon = '🎯';
+      else if (/note:|tip:|reminder:|important:/.test(lower)) icon = '📝';
+
+      return { icon, text, time: time || period };
+    }
+
+    function normalizeTime(raw) {
+      raw = raw.trim().toUpperCase();
+      if (/[AP]M/.test(raw)) return raw;
+      const [h, m] = raw.replace('H', ':').split(':');
+      return `${h.padStart(2,'0')}:${(m||'00').padStart(2,'0')}`;
+    }
+
+    function parseDayHeader(line) {
+      const dayMatch = line.match(/^day\s*(\d+)\s*[-–:·,]?\s*/i);
+      if (dayMatch) {
+        const rest = line.slice(dayMatch[0].length).trim();
+        return { label: `Day ${dayMatch[1]}`, name: rest || null };
+      }
+      const wdMatch = line.match(/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i);
+      if (wdMatch) {
+        const rest = line.slice(wdMatch[0].length).replace(/^[,\s–\-]+/, '').trim();
+        return { label: wdMatch[1][0].toUpperCase() + wdMatch[1].slice(1).toLowerCase(), name: rest || null };
+      }
+      return { label: '', name: line };
+    }
+
+    function parseStructured(text) {
+      const lines = text.split('\n').map(l => l.trim()).filter(l => l && !isSeparatorLine(l));
+      const days = [];
+      let currentDay = null;
+      let titleLine = '';
+
+      for (const line of lines) {
+        if (isDayHeader(line)) {
+          const parsed = parseDayHeader(line);
+          currentDay = { ...parsed, events: [] };
+          days.push(currentDay);
+        } else if (!currentDay) {
+          if (!titleLine) titleLine = line;
+        } else {
+          const event = classifyEvent(line);
+          if (event) currentDay.events.push(event);
+        }
+      }
+
+      if (days.length === 0) {
+        const events = lines.filter(l => l !== titleLine).map(classifyEvent).filter(Boolean);
+        if (events.length) days.push({ label: '', name: 'Itinerary', events });
+      }
+
+      return { title: titleLine || 'My Trip', days };
+    }
+
+    // ─── Main Parser ───────────────────────────────────────────────────────────
+    function parseItinerary(text) {
+      const hasStructure = DAY_HEADER_PATTERNS.some(p => p.test(text));
+      if (hasStructure) return parseStructured(text);
+
+      const emailResult = parseEmails(text);
+      if (emailResult) return emailResult;
+
+      // No day structure and email extraction found nothing — don't dump all text
+      return { title: 'Nothing found', days: [], parseWarning: true };
+    }
+
+    // ─── Render ────────────────────────────────────────────────────────────────
+    function esc(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function eventHtml(e) {
+      const del = `<button class="delete-btn" onclick="deleteEvent(this)" title="Remove">×</button>`;
+      if (e.time) {
+        return `<div class="event"><span class="event-icon" onclick="cycleIcon(this)">${e.icon}</span><span class="event-time" contenteditable="true" spellcheck="false">${esc(e.time)}</span><span class="event-text" contenteditable="true" spellcheck="false">${esc(e.text)}</span>${del}</div>`;
+      }
+      return `<div class="event no-time"><span class="event-icon" onclick="cycleIcon(this)">${e.icon}</span><span class="event-text" contenteditable="true" spellcheck="false">${esc(e.text)}</span>${del}</div>`;
+    }
+
+    // ─── Edit Mode ─────────────────────────────────────────────────────────────
+    let editMode = false;
+    const ICONS = ['📍','✈','🏨','🍽','🚌','🎯','📝'];
+
+    function toggleEditMode() {
+      editMode = !editMode;
+      document.getElementById('itinerary-view').classList.toggle('edit-mode', editMode);
+      document.getElementById('edit-toggle').textContent = editMode ? 'Done editing' : 'Edit';
+    }
+
+    function cycleIcon(span) {
+      if (!editMode) return;
+      const idx = (ICONS.indexOf(span.textContent) + 1) % ICONS.length;
+      span.textContent = ICONS[idx];
+    }
+
+    function deleteEvent(btn) {
+      btn.closest('.event').remove();
+    }
+
+    function addEvent(btn) {
+      const eventsDiv = btn.closest('.day-events');
+      const el = document.createElement('div');
+      el.innerHTML = eventHtml({ icon: '📍', text: '', time: '' });
+      const ev = el.firstChild;
+      eventsDiv.insertBefore(ev, btn);
+      ev.querySelector('.event-text').focus();
+    }
+
+    // Prevent newlines in single-line contenteditable fields
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && e.target.matches('[contenteditable]')) {
+        e.preventDefault();
+        e.target.blur();
+      }
+    });
+
+    function getItineraryData() {
+      const title = document.getElementById('trip-title').textContent.trim();
+      const days = [];
+      for (const card of document.querySelectorAll('#days-grid .day-card')) {
+        const label = card.querySelector('.day-label')?.textContent.trim() || '';
+        const name  = card.querySelector('.day-name')?.textContent.trim() || '';
+        const events = [];
+        for (const ev of card.querySelectorAll('.event')) {
+          const icon = ev.querySelector('.event-icon')?.textContent.trim() || '📍';
+          const text = ev.querySelector('.event-text')?.textContent.trim() || '';
+          const time = ev.querySelector('.event-time')?.textContent.trim() || '';
+          if (text) events.push({ icon, text, time });
+        }
+        days.push({ label, name, events });
+      }
+      return { title, days };
+    }
+
+    function renderItinerary(data) {
+      // Exit edit mode on re-render
+      if (editMode) toggleEditMode();
+      document.getElementById('trip-title').textContent = data.title;
+
+      const meta = document.getElementById('trip-meta');
+      meta.innerHTML = data.days.length > 1 ? `<span>📅 ${data.days.length} days</span>` : '';
+
+      const warning = document.getElementById('parse-warning');
+      if (data.parseWarning === true) {
+        warning.textContent = 'No flights or hotel bookings were recognised. Make sure you paste the full confirmation email, or use "Day 1 / Day 2" headers to add a manual itinerary.';
+        warning.style.display = '';
+      } else if (data.mode === 'email') {
+        const totalEvents = data.days.reduce((n, d) => n + d.events.length, 0);
+        if (totalEvents < 2) {
+          warning.textContent = 'Only a few items were recognised. For best results, paste the full confirmation email including check-in dates and flight details.';
+          warning.style.display = '';
+        } else {
+          warning.style.display = 'none';
+        }
+      } else {
+        warning.style.display = 'none';
+      }
+
+      const grid = document.getElementById('days-grid');
+      grid.innerHTML = '';
+
+      for (const day of data.days) {
+        const displayName = day.name || day.label;
+        const eventsHtml = day.events.length
+          ? day.events.map(e => eventHtml(e)).join('')
+          : '<div class="empty-day">No events listed</div>';
+
+        const card = document.createElement('div');
+        card.className = 'day-card';
+        card.innerHTML = `
+          <div class="day-header">
+            ${day.label ? `<div class="day-label">${esc(day.label)}</div>` : ''}
+            <div class="day-name" contenteditable="true" spellcheck="false">${esc(displayName)}</div>
+          </div>
+          <div class="day-events">
+            ${eventsHtml}
+            <button class="add-event-btn" onclick="addEvent(this)">+ Add event</button>
+          </div>
+        `;
+        grid.appendChild(card);
+      }
+    }
+
+    // ─── Actions ───────────────────────────────────────────────────────────────
+    function parse() {
+      const text = document.getElementById('raw-input').value.trim();
+      if (!text) return;
+      rawText = text;
+      renderItinerary(parseItinerary(text));
+      document.getElementById('input-view').style.display = 'none';
+      document.getElementById('itinerary-view').style.display = 'block';
+      window.scrollTo(0, 0);
+    }
+
+    function showInput() {
+      document.getElementById('input-view').style.display = '';
+      document.getElementById('itinerary-view').style.display = 'none';
+    }
+
+    function toBase64(str) {
+      return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (_, p) => String.fromCharCode(parseInt(p,16))));
+    }
+
+    function fromBase64(b64) {
+      return decodeURIComponent([...atob(b64)].map(c => '%' + c.charCodeAt(0).toString(16).padStart(2,'0')).join(''));
+    }
+
+    function copyLink() {
+      const url = new URL(window.location.href);
+      url.search = '';
+      // Serialize the current (possibly edited) DOM state so edits are preserved
+      url.searchParams.set('d', toBase64(JSON.stringify(getItineraryData())));
+      navigator.clipboard.writeText(url.toString()).then(() => {
+        const el = document.getElementById('copy-confirm');
+        el.style.display = 'inline';
+        setTimeout(() => { el.style.display = 'none'; }, 2500);
+      });
+    }
+
+    // ─── Examples ──────────────────────────────────────────────────────────────
+    function loadExample(type) {
+      if (type === 'email') {
+        document.getElementById('raw-input').value = `---------- Forwarded message ----------
+From: American Airlines <noreply@aa.com>
+Subject: Your flight is confirmed – Booking reference: ABCD12
+
+Your booking is confirmed
+
+Passenger: Jane Smith
+
+──────────────────────────────────────
+FLIGHT 1 OF 2 · OUTBOUND
+──────────────────────────────────────
+
+DEPARTING
+New York (JFK)
+Wednesday, June 11, 2025
+7:00 PM
+
+ARRIVING
+London (LHR)
+Thursday, June 12, 2025
+7:15 AM
+
+Flight: AA 100 · Economy Class · Duration: 7h 15m
+Seat: 14A
+
+──────────────────────────────────────
+FLIGHT 2 OF 2 · RETURN
+──────────────────────────────────────
+
+DEPARTING
+London (LHR)
+Friday, June 20, 2025
+11:30 AM
+
+ARRIVING
+New York (JFK)
+Friday, June 20, 2025
+2:00 PM
+
+Flight: AA 101 · Economy Class · Duration: 7h 30m
+Seat: 22C
+
+──────────────────────────────────────
+
+Manage your booking at aa.com · Terms and conditions apply
+
+
+---------- Forwarded message ----------
+From: Booking.com <noreply@booking.com>
+Subject: Booking confirmed – The Savoy, London
+
+Your booking is confirmed!
+
+Hotel: The Savoy
+Check-in: Thursday, June 12, 2025 · From 3:00 PM
+Check-out: Friday, June 20, 2025 · Until 12:00 PM
+
+Room: Superior Double Room
+Guests: 1 adult
+Confirmation number: 4521987630
+
+Free cancellation until June 5, 2025.
+
+Need help? Visit booking.com/help`;
+      } else {
+        document.getElementById('raw-input').value = `Tokyo & Kyoto Trip – June 3–10, 2025
+
+Day 1 – June 3 · Arrival in Tokyo
+  14:00  Flight JL123 arrives at Narita Airport
+  16:30  Check in at Park Hyatt Shinjuku
+  19:30  Dinner at Ichiran Ramen, Shinjuku
+
+Day 2 – June 4 · Tokyo Exploring
+  09:00  Senso-ji Temple, Asakusa
+  12:00  Lunch at depachika, Shibuya
+  14:30  Meiji Jingu Shrine
+  17:00  Harajuku Takeshita Street
+  20:00  Dinner at Gonpachi Izakaya
+
+Day 3 – June 5 · Tokyo Day 2
+  10:00  teamLab Borderless
+  13:00  Lunch in Odaiba
+  15:00  Akihabara electronics & anime district
+  19:30  Dinner at Sushi Saito (reservation)
+
+Day 4 – June 6 · Nikko Day Trip
+  08:00  Train: Shinjuku → Nikko (Tobu line, 2h)
+  11:00  Tosho-gu Shrine complex
+  13:30  Lunch near Shin-kyo Bridge
+  17:00  Train back to Tokyo
+
+Day 5 – June 7 · Tokyo → Kyoto
+  11:00  Check out of Park Hyatt
+  12:30  Shinkansen: Tokyo → Kyoto (2h15m)
+  15:00  Check in at Ace Hotel Kyoto
+  19:00  Dinner at Nishiki Market area
+
+Day 6 – June 8 · Arashiyama & Fushimi
+  09:00  Arashiyama Bamboo Grove
+  10:30  Tenryu-ji Temple & garden
+  12:30  Lunch: tofu kaiseki near Togetsukyo Bridge
+  14:30  Fushimi Inari-taisha (1000 torii gates)
+  18:00  Gion evening walk
+
+Day 7 – June 9 · Kyoto Temples
+  09:00  Kinkaku-ji (Golden Pavilion)
+  11:00  Ryoan-ji rock garden
+  13:00  Lunch at Nishiki Market
+  15:00  Nijo Castle
+  19:00  Farewell kaiseki dinner
+
+Day 8 – June 10 · Departure
+  09:00  Check out of Ace Hotel
+  11:00  Train: Kyoto → Osaka Kansai Airport (75 min)
+  14:30  Flight home`;
+      }
+    }
+
+    // ─── Init ──────────────────────────────────────────────────────────────────
+    (function init() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('d')) {
+        // Structured data (from copyLink after possible editing)
+        try {
+          const data = JSON.parse(fromBase64(params.get('d')));
+          renderItinerary(data);
+          document.getElementById('input-view').style.display = 'none';
+          document.getElementById('itinerary-view').style.display = 'block';
+        } catch (e) {
+          console.warn('Could not decode itinerary from URL', e);
+        }
+      } else if (params.has('t')) {
+        // Raw text (legacy links)
+        try {
+          document.getElementById('raw-input').value = fromBase64(params.get('t'));
+          parse();
+        } catch (e) {
+          console.warn('Could not decode itinerary from URL', e);
+        }
+      }
+    })();
+  </script>
+</body>
+</html>
