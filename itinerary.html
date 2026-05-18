@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Travel Itinerary</title>
   <link rel="stylesheet" href="theme.css">
+  <!-- Icons by Lucide (https://lucide.dev) — MIT License -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <style>
     :root { --content-max-width: 860px; }
 
@@ -63,6 +65,10 @@
       font-weight: 700;
       color: var(--text-primary);
       margin-bottom: 0.5rem;
+      border-radius: 4px;
+      outline: none;
+      display: inline-block;
+      min-width: 4ch;
     }
 
     .trip-meta {
@@ -72,7 +78,9 @@
       font-size: 0.82rem;
       color: var(--text-muted);
       margin-bottom: 1.75rem;
+      align-items: center;
     }
+    .trip-meta span { display: flex; align-items: center; gap: 0.3rem; }
 
     .days-grid {
       display: grid;
@@ -174,7 +182,9 @@
     }
     .edit-mode .itinerary-doc { border-color: var(--accent); }
 
-    .event-icon { text-align: center; }
+    .event-icon { display: flex; align-items: center; justify-content: center; color: var(--text-muted); align-self: center; }
+    .event-icon svg { display: block; width: 14px; height: 14px; }
+    .trip-meta svg { width: 13px; height: 13px; vertical-align: -2px; }
     .event-time { color: var(--text-muted); font-size: 0.75rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
     .event-text { color: var(--text-body); }
 
@@ -214,7 +224,7 @@
 </head>
 <body>
   <div class="top-bar">
-    <button class="theme-toggle" onclick="toggleTheme()">◐ Light</button>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme"></button>
   </div>
 
   <h1>Travel Itinerary</h1>
@@ -243,7 +253,7 @@
     </div>
     <div id="parse-warning" class="parse-warning" style="display:none"></div>
     <div class="itinerary-doc">
-      <div class="trip-title" id="trip-title"></div>
+      <div class="trip-title" id="trip-title" contenteditable="true" spellcheck="false"></div>
       <div class="trip-meta" id="trip-meta"></div>
       <div class="days-grid" id="days-grid"></div>
     </div>
@@ -258,9 +268,12 @@
       if (s === 'light' || s === 'dark') return s;
       return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
     }
+    const SUN = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>`;
+    const MOON = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`;
+
     function applyTheme(t) {
       html.setAttribute('data-theme', t);
-      themeBtn.textContent = t === 'light' ? '◑ Dark' : '◑ Light';
+      themeBtn.innerHTML = t === 'light' ? MOON : SUN;
     }
     function toggleTheme() {
       const next = getEffectiveTheme() === 'light' ? 'dark' : 'light';
@@ -427,7 +440,7 @@
               seen.add(key);
               const name = findHotelName(lines, i);
               const time = parseTime(line) || parseTime(lines[i+1] || '');
-              events.push({ type:'hotel-in', date, time, text: name ? `Check in: ${name}` : 'Check in', icon:'🏨' });
+              events.push({ type:'hotel-in', date, time, text: name ? `Check in: ${name}` : 'Check in', icon:'hotel' });
             }
           }
         }
@@ -441,7 +454,7 @@
               seen.add(key);
               const name = findHotelName(lines, i);
               const time = parseTime(line) || parseTime(lines[i+1] || '');
-              events.push({ type:'hotel-out', date, time, text: name ? `Check out: ${name}` : 'Check out', icon:'🏨' });
+              events.push({ type:'hotel-out', date, time, text: name ? `Check out: ${name}` : 'Check out', icon:'hotel' });
             }
           }
         }
@@ -460,7 +473,7 @@
             seen.add(key);
             const name = findHotelName(lines, i);
             const label = isCheckin ? 'Check in' : 'Check out';
-            events.push({ type: isCheckin?'hotel-in':'hotel-out', date, time:'', text: name ? `${label}: ${name}` : label, icon:'🏨' });
+            events.push({ type: isCheckin?'hotel-in':'hotel-out', date, time:'', text: name ? `${label}: ${name}` : label, icon:'hotel' });
           }
         }
       }
@@ -504,7 +517,7 @@
           seen.add(key);
           const fnMatch = text.match(/\b([A-Z]{2}\d{1,4})\b/);
           if (fnMatch) seenFlightNums.add(fnMatch[1]);
-          events.push({ type:'flight', date, time, text, icon:'✈' });
+          events.push({ type:'flight', date, time, text, icon:'flight' });
         }
       }
 
@@ -633,6 +646,65 @@
       return days;
     }
 
+    // ─── Title Inference ───────────────────────────────────────────────────────
+    const IATA_CITIES = {
+      JFK:'New York',LGA:'New York',EWR:'New York',
+      LAX:'Los Angeles',SFO:'San Francisco',SJC:'San Jose',SNA:'Orange County',
+      ORD:'Chicago',MDW:'Chicago',
+      DFW:'Dallas',DAL:'Dallas',IAH:'Houston',HOU:'Houston',
+      MIA:'Miami',FLL:'Fort Lauderdale',MCO:'Orlando',TPA:'Tampa',
+      ATL:'Atlanta',BOS:'Boston',SEA:'Seattle',DEN:'Denver',
+      LAS:'Las Vegas',PHX:'Phoenix',SAN:'San Diego',PDX:'Portland',
+      IAD:'Washington DC',DCA:'Washington DC',BWI:'Baltimore',
+      MSP:'Minneapolis',DTW:'Detroit',CLT:'Charlotte',PHL:'Philadelphia',
+      STL:'St. Louis',MSY:'New Orleans',AUS:'Austin',
+      HNL:'Honolulu',OGG:'Maui',KOA:'Kona',
+      LHR:'London',LGW:'London',STN:'London',LCY:'London',
+      CDG:'Paris',ORY:'Paris',
+      FRA:'Frankfurt',MUC:'Munich',DUS:'Düsseldorf',TXL:'Berlin',BER:'Berlin',
+      AMS:'Amsterdam',BRU:'Brussels',ZRH:'Zurich',GVA:'Geneva',VIE:'Vienna',
+      MAD:'Madrid',BCN:'Barcelona',LIS:'Lisbon',OPO:'Porto',
+      FCO:'Rome',MXP:'Milan',LIN:'Milan',VCE:'Venice',NAP:'Naples',FLR:'Florence',
+      ATH:'Athens',SKG:'Thessaloniki',IST:'Istanbul',SAW:'Istanbul',
+      DXB:'Dubai',AUH:'Abu Dhabi',DOH:'Doha',RUH:'Riyadh',
+      SIN:'Singapore',KUL:'Kuala Lumpur',BKK:'Bangkok',HKT:'Phuket',
+      NRT:'Tokyo',HND:'Tokyo',KIX:'Osaka',ITM:'Osaka',NGO:'Nagoya',CTS:'Sapporo',
+      ICN:'Seoul',GMP:'Seoul',PEK:'Beijing',PKX:'Beijing',PVG:'Shanghai',SHA:'Shanghai',
+      CAN:'Guangzhou',SZX:'Shenzhen',HKG:'Hong Kong',TPE:'Taipei',
+      SYD:'Sydney',MEL:'Melbourne',BNE:'Brisbane',PER:'Perth',AKL:'Auckland',CHC:'Christchurch',
+      YYZ:'Toronto',YVR:'Vancouver',YUL:'Montreal',YYC:'Calgary',YOW:'Ottawa',
+      GRU:'São Paulo',GIG:'Rio de Janeiro',EZE:'Buenos Aires',SCL:'Santiago',BOG:'Bogotá',LIM:'Lima',
+      MEX:'Mexico City',CUN:'Cancún',SJD:'Los Cabos',PVR:'Puerto Vallarta',GDL:'Guadalajara',
+      JNB:'Johannesburg',CPT:'Cape Town',NBO:'Nairobi',ADD:'Addis Ababa',CMN:'Casablanca',
+      DEL:'Delhi',BOM:'Mumbai',BLR:'Bangalore',MAA:'Chennai',CCU:'Kolkata',HYD:'Hyderabad',
+      SVO:'Moscow',DME:'Moscow',LED:'St. Petersburg',
+      HEL:'Helsinki',ARN:'Stockholm',OSL:'Oslo',CPH:'Copenhagen',GOT:'Gothenburg',
+      DUB:'Dublin',EDI:'Edinburgh',MAN:'Manchester',BHX:'Birmingham',
+      LJU:'Ljubljana',ZAG:'Zagreb',BEG:'Belgrade',SOF:'Sofia',OTP:'Bucharest',WAW:'Warsaw',PRG:'Prague',BUD:'Budapest',
+      KEF:'Reykjavik',
+    };
+
+    function inferTitleFromEvents(flightEvents, hotelEvents) {
+      // Sort flights by date to find the first outbound destination
+      const sorted = [...flightEvents].filter(e => e.date).sort((a, b) => a.date - b.date);
+
+      for (const ev of sorted) {
+        const m = ev.text.match(/→\s*([A-Z]{3})/);
+        if (m) {
+          const code = m[1];
+          return `My Trip to ${IATA_CITIES[code] || code}`;
+        }
+      }
+
+      // Fall back to hotel name (strip check-in/out prefix)
+      for (const ev of [...hotelEvents].filter(e => e.type === 'hotel-in')) {
+        const name = ev.text.replace(/^check\s+in:\s*/i, '').trim();
+        if (name && name.length > 3) return name;
+      }
+
+      return 'My Trip';
+    }
+
     // ─── Email Mode ────────────────────────────────────────────────────────────
     function parseEmails(text) {
       const lines = text.split('\n').map(l => l.trim());
@@ -643,12 +715,13 @@
 
       const days = buildDaysFromEvents(allEvents);
 
-      // Best-effort title from email subject line patterns
-      let title = 'My Trip';
+      // Try email subject patterns first, then infer from flight/hotel data
+      let title = '';
       for (const line of lines.slice(0, 30)) {
         const m = line.match(/(?:your (?:trip|flight|booking|reservation) (?:to|from|for)|booking confirmed[:\s]+|confirmation\s+(?:for|details?|summary)\s*[:\-]?\s*)(.{3,60})/i);
         if (m) { title = m[1].trim().replace(/[.!]+$/, ''); break; }
       }
+      if (!title) title = inferTitleFromEvents(flightEvents, hotelEvents);
 
       return { title, days, mode: 'email' };
     }
@@ -679,13 +752,13 @@
       if (!text) return null;
 
       const lower = text.toLowerCase();
-      let icon = '📍';
-      if (/\bflight\b|\bfly\b|\bflying\b|airport|departs?|arrives?|\b[A-Z]{2}\d{3,4}\b/.test(text)) icon = '✈';
-      else if (/hotel|check.?in|check.?out|hostel|airbnb|accommodation|resort|inn|lodge|\bstay\b/.test(lower)) icon = '🏨';
-      else if (/breakfast|lunch|dinner|brunch|restaurant|café|cafe|bar|eatery|\bdine\b|\beat\b/.test(lower)) icon = '🍽';
-      else if (/\btrain\b|\bsubway\b|\bmetro\b|\btram\b|\bbus\b|\btaxi\b|\buber\b|\blyft\b|transfer|ferry|cruise|\bdrive\b/.test(lower)) icon = '🚌';
-      else if (/museum|gallery|temple|shrine|palace|castle|\bpark\b|beach|\bhike\b|trek|tour|visit|explore|market/.test(lower)) icon = '🎯';
-      else if (/note:|tip:|reminder:|important:/.test(lower)) icon = '📝';
+      let icon = 'pin';
+      if (/\bflight\b|\bfly\b|\bflying\b|airport|departs?|arrives?|\b[A-Z]{2}\d{3,4}\b/.test(text)) icon = 'flight';
+      else if (/hotel|check.?in|check.?out|hostel|airbnb|accommodation|resort|inn|lodge|\bstay\b/.test(lower)) icon = 'hotel';
+      else if (/breakfast|lunch|dinner|brunch|restaurant|café|cafe|bar|eatery|\bdine\b|\beat\b/.test(lower)) icon = 'food';
+      else if (/\btrain\b|\bsubway\b|\bmetro\b|\btram\b|\bbus\b|\btaxi\b|\buber\b|\blyft\b|transfer|ferry|cruise|\bdrive\b/.test(lower)) icon = 'transport';
+      else if (/museum|gallery|temple|shrine|palace|castle|\bpark\b|beach|\bhike\b|trek|tour|visit|explore|market/.test(lower)) icon = 'activity';
+      else if (/note:|tip:|reminder:|important:/.test(lower)) icon = 'note';
 
       return { icon, text, time: time || period };
     }
@@ -735,6 +808,14 @@
         if (events.length) days.push({ label: '', name: 'Itinerary', events });
       }
 
+      if (!titleLine) {
+        // Look for IATA destination codes in flight event text (e.g. "SFO → JFK")
+        const flightTexts = days.flatMap(d => d.events).filter(e => e.icon === 'flight').map(e => e.text);
+        for (const t of flightTexts) {
+          const m = t.match(/→\s*([A-Z]{3})/);
+          if (m && IATA_CITIES[m[1]]) { titleLine = `My Trip to ${IATA_CITIES[m[1]]}`; break; }
+        }
+      }
       return { title: titleLine || 'My Trip', days };
     }
 
@@ -756,27 +837,50 @@
     }
 
     function eventHtml(e) {
+      const key = iconKey(e.icon);
+      const icon = `<span class="event-icon" data-icon="${key}" onclick="cycleIcon(this)">${lucideIcon(key)}</span>`;
       const del = `<button class="delete-btn" onclick="deleteEvent(this)" title="Remove">×</button>`;
       if (e.time) {
-        return `<div class="event"><span class="event-icon" onclick="cycleIcon(this)">${e.icon}</span><span class="event-time" contenteditable="true" spellcheck="false">${esc(e.time)}</span><span class="event-text" contenteditable="true" spellcheck="false">${esc(e.text)}</span>${del}</div>`;
+        return `<div class="event">${icon}<span class="event-time" contenteditable="true" spellcheck="false">${esc(e.time)}</span><span class="event-text" contenteditable="true" spellcheck="false">${esc(e.text)}</span>${del}</div>`;
       }
-      return `<div class="event no-time"><span class="event-icon" onclick="cycleIcon(this)">${e.icon}</span><span class="event-text" contenteditable="true" spellcheck="false">${esc(e.text)}</span>${del}</div>`;
+      return `<div class="event no-time">${icon}<span class="event-text" contenteditable="true" spellcheck="false">${esc(e.text)}</span>${del}</div>`;
     }
+
+    // ─── Icons ─────────────────────────────────────────────────────────────────
+    const ICON_NAMES = {
+      pin: 'map-pin', flight: 'plane', hotel: 'building-2',
+      food: 'utensils', transport: 'bus', activity: 'star',
+      note: 'file-text', calendar: 'calendar',
+    };
+    const ICON_KEYS = ['pin','flight','hotel','food','transport','activity','note'];
+
+    function iconKey(k) { return ICON_NAMES[k] ? k : 'pin'; }
+    function lucideIcon(key) { return `<i data-lucide="${ICON_NAMES[key]}"></i>`; }
+    function renderIcons() { if (typeof lucide !== 'undefined') lucide.createIcons(); }
 
     // ─── Edit Mode ─────────────────────────────────────────────────────────────
     let editMode = false;
-    const ICONS = ['📍','✈','🏨','🍽','🚌','🎯','📝'];
+
+    function setContentEditable(enabled) {
+      for (const el of document.querySelectorAll('#itinerary-view [contenteditable]')) {
+        el.contentEditable = enabled ? 'true' : 'false';
+      }
+    }
 
     function toggleEditMode() {
       editMode = !editMode;
       document.getElementById('itinerary-view').classList.toggle('edit-mode', editMode);
       document.getElementById('edit-toggle').textContent = editMode ? 'Done editing' : 'Edit';
+      setContentEditable(editMode);
     }
 
     function cycleIcon(span) {
       if (!editMode) return;
-      const idx = (ICONS.indexOf(span.textContent) + 1) % ICONS.length;
-      span.textContent = ICONS[idx];
+      const curr = span.dataset.icon || 'pin';
+      const next = ICON_KEYS[(ICON_KEYS.indexOf(curr) + 1) % ICON_KEYS.length];
+      span.dataset.icon = next;
+      span.innerHTML = lucideIcon(next);
+      renderIcons();
     }
 
     function deleteEvent(btn) {
@@ -786,9 +890,10 @@
     function addEvent(btn) {
       const eventsDiv = btn.closest('.day-events');
       const el = document.createElement('div');
-      el.innerHTML = eventHtml({ icon: '📍', text: '', time: '' });
+      el.innerHTML = eventHtml({ icon: 'pin', text: '', time: '' });
       const ev = el.firstChild;
       eventsDiv.insertBefore(ev, btn);
+      renderIcons();
       ev.querySelector('.event-text').focus();
     }
 
@@ -808,7 +913,7 @@
         const name  = card.querySelector('.day-name')?.textContent.trim() || '';
         const events = [];
         for (const ev of card.querySelectorAll('.event')) {
-          const icon = ev.querySelector('.event-icon')?.textContent.trim() || '📍';
+          const icon = ev.querySelector('.event-icon')?.dataset.icon || 'pin';
           const text = ev.querySelector('.event-text')?.textContent.trim() || '';
           const time = ev.querySelector('.event-time')?.textContent.trim() || '';
           if (text) events.push({ icon, text, time });
@@ -824,7 +929,7 @@
       document.getElementById('trip-title').textContent = data.title;
 
       const meta = document.getElementById('trip-meta');
-      meta.innerHTML = data.days.length > 1 ? `<span>📅 ${data.days.length} days</span>` : '';
+      meta.innerHTML = data.days.length > 1 ? `<span>${lucideIcon('calendar')} ${data.days.length} days</span>` : '';
 
       const warning = document.getElementById('parse-warning');
       if (data.parseWarning === true) {
@@ -865,6 +970,8 @@
         `;
         grid.appendChild(card);
       }
+      renderIcons();
+      setContentEditable(false);
     }
 
     // ─── Actions ───────────────────────────────────────────────────────────────
