@@ -821,7 +821,11 @@
 
     // ─── Main Parser ───────────────────────────────────────────────────────────
     function parseItinerary(text) {
-      const hasStructure = DAY_HEADER_PATTERNS.some(p => p.test(text));
+      const lines = text.split('\n').map(l => l.trim()).filter(l => l && !isSeparatorLine(l));
+      const firstLineIsTitle = lines.length > 0 && !isDayHeader(lines[0]);
+      const restText = firstLineIsTitle ? lines.slice(1).join('\n') : text;
+      const hasStructure = DAY_HEADER_PATTERNS.some(p => p.test(text)) ||
+        DAY_HEADER_PATTERNS.some(p => p.test(restText));
       if (hasStructure) return parseStructured(text);
 
       const emailResult = parseEmails(text);
