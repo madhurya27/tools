@@ -86,6 +86,28 @@ Palette: https://colorhunt.co/palette/f8ede3bdd2b6a2b29f798777
 
 ---
 
+## Icons
+
+Use [Lucide](https://lucide.dev) for all UI icons (MIT License — add `<!-- Icons by Lucide (https://lucide.dev) — MIT License -->` as a comment near the script tag). Load from CDN in the `<head>`:
+
+```html
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+```
+
+Render icons with `data-lucide` attributes and call `lucide.createIcons()` after any DOM update that inserts them:
+
+```html
+<i data-lucide="plane"></i>
+```
+
+```js
+lucide.createIcons();
+```
+
+Size via CSS — Lucide defaults to 24×24, override with `width`/`height` on the `svg` element. Use `stroke="currentColor"` (Lucide default) so icons inherit the element's `color` for theming.
+
+---
+
 ## Page template
 
 Copy `template.html` as the starting point for every new tool.
