@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-No build step, no dependencies. Serve locally with `make serve` (defaults to port 8080).
+No build step. CDN links for runtime libraries are fine; no build-time dependencies. Serve locally with `make serve` (defaults to port 8080).
 
 ## Architecture
 

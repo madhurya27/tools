@@ -8,6 +8,7 @@ A collection of small, self-contained browser utilities. No frameworks, no depen
 
 | Tool | Description |
 |------|-------------|
+| [Travel Itinerary](itinerary.html) | Paste flight/hotel emails or a Day 1/Day 2 itinerary to get a clean visual layout |
 | [Phonetic Converter](phonetic-converter.html) | Convert text into NATO phonetic codewords |
 
 ## Adding a new tool
@@ -20,6 +21,5 @@ A collection of small, self-contained browser utilities. No frameworks, no depen
 ## Principles
 
 - One file per tool, no build step
-- No external dependencies
-- Works offline once loaded
+- No build-time dependencies; CDN links for runtime libraries are fine
 - Mobile friendly
