@@ -8,4 +8,4 @@ Each tool is a single `.html` file at the repo root. `index.html` is the homepag
 
 ## Adding a new tool
 
-See `README.md` for the checklist and `STYLE_GUIDE.md` for the page template, color tokens, and how to add a card to `index.html`.
+Copy `template.html`, then see `README.md` for the checklist and `STYLE_GUIDE.md` for color tokens and how to add a card to `index.html`.

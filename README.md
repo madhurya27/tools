@@ -8,12 +8,12 @@ A collection of small, self-contained browser utilities. No frameworks, no depen
 
 | Tool | Description |
 |------|-------------|
-| [NATO Phonetic Converter](nato-converter.html) | Convert text into NATO phonetic codewords |
+| [Phonetic Converter](phonetic-converter.html) | Convert text into NATO phonetic codewords |
 
 ## Adding a new tool
 
-1. Create a single `.html` file in the root of the repo
-2. Follow the patterns in [STYLE_GUIDE.md](STYLE_GUIDE.md) — copy the starter template to stay consistent
+1. Copy `template.html` to a new file in the root of the repo
+2. Follow the patterns in [STYLE_GUIDE.md](STYLE_GUIDE.md) for color tokens, layout, and components
 3. Add a card for it in `index.html`
 4. Add a row for it in the table above
 
