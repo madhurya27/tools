@@ -132,6 +132,19 @@ test.describe('Itinerary – email parsing', () => {
   test('infers title from flight destination', async ({ page }) => {
     await expect(page.locator('#trip-title')).toContainText('London');
   });
+
+  test('trip meta shows calendar span, not card count', async ({ page }) => {
+    // EMAIL has 3 day cards (Jun 11, Jun 12, Jun 20) but spans 10 calendar days
+    await expect(page.locator('#trip-meta')).toContainText('10 days');
+  });
+
+  test('day labels reflect calendar offset from trip start', async ({ page }) => {
+    const labels = page.locator('.day-label');
+    // Jun 11 = Day 1, Jun 12 = Day 2, Jun 20 = Day 10
+    await expect(labels.nth(0)).toContainText('Day 1');
+    await expect(labels.nth(1)).toContainText('Day 2');
+    await expect(labels.nth(2)).toContainText('Day 10');
+  });
 });
 
 test.describe('Itinerary – parse warning', () => {
@@ -285,6 +298,17 @@ test.describe('Itinerary – shareable link', () => {
     await expect(page.locator('#itinerary-view')).toBeVisible();
     await expect(page.locator('#input-view')).toBeHidden();
     await expect(page.locator('#days-grid .day-card')).toHaveCount(3);
+  });
+
+  test('shareable link preserves calendar-span day count', async ({ page, context }) => {
+    // Visualize EMAIL (3 cards, 10-day span) then round-trip through the share URL
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.goto('/itinerary.html');
+    await visualize(page, EMAIL);
+    await page.locator('button', { hasText: 'Copy shareable link' }).click();
+    const url = await page.evaluate(() => navigator.clipboard.readText());
+    await page.goto(url);
+    await expect(page.locator('#trip-meta')).toContainText('10 days');
   });
 
   test('shareable link preserves edited title', async ({ page }) => {
