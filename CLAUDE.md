@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-No build step. CDN links for runtime libraries are fine; no build-time dependencies. Serve locally with `make serve` (defaults to port 8080). Run tests with `make test`.
+No build step. CDN links for runtime libraries are fine; no build-time dependencies. Serve locally with `make serve` (defaults to port 8080). Run tests with `make test`, or scope to one tool with `pnpm test tests/<tool-name>.spec.js`.
 
 ## Architecture
 
