@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-No build step. CDN links for runtime libraries are fine; no build-time dependencies. Serve locally with `make serve` (defaults to port 8080).
+No build step. CDN links for runtime libraries are fine; no build-time dependencies. Serve locally with `make serve` (defaults to port 8080). Run tests with `make test`.
 
 ## Architecture
 
@@ -8,4 +8,4 @@ Each tool is a single `.html` file at the repo root. `index.html` is the homepag
 
 ## Adding a new tool
 
-Copy `template.html`, then see `README.md` for the checklist and `STYLE_GUIDE.md` for color tokens and how to add a card to `index.html`.
+Copy `template.html`, then see `README.md` for the checklist and `STYLE_GUIDE.md` for color tokens and how to add a card to `index.html`. Add a corresponding `tests/<tool-name>.spec.js` — see `README.md` for what to cover.
