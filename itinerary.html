@@ -634,13 +634,21 @@
         dayMap.get(key).events.push({ icon: ev.icon, text: ev.text, time: ev.time || '' });
       }
 
+      const datedEntries = [...dayMap.values()].filter(d => d.date);
+      const firstDate = datedEntries.length ? datedEntries[0].date : null;
+
       const days = [];
-      let n = 1;
       for (const [, dayData] of dayMap) {
+        let label = '';
+        if (dayData.date && firstDate) {
+          const n = Math.round((dayData.date - firstDate) / 86400000) + 1;
+          label = `Day ${n}`;
+        }
         days.push({
-          label: dayData.date ? `Day ${n++}` : '',
+          label,
           name: formatDate(dayData.date),
           events: dayData.events,
+          date: dayData.date,
         });
       }
       return days;
@@ -922,7 +930,8 @@
           const time = ev.querySelector('.event-time')?.textContent.trim() || '';
           if (text) events.push({ icon, text, time });
         }
-        days.push({ label, name, events });
+        const date = card.dataset.date ? new Date(card.dataset.date) : null;
+        days.push({ label, name, events, date });
       }
       return { title, days };
     }
@@ -933,7 +942,15 @@
       document.getElementById('trip-title').textContent = data.title;
 
       const meta = document.getElementById('trip-meta');
-      meta.innerHTML = data.days.length > 1 ? `<span>${lucideIcon('calendar')} ${data.days.length} days</span>` : '';
+      const toDate = d => d instanceof Date ? d : (d ? new Date(d) : null);
+      const datedDays = data.days.map(d => toDate(d.date)).filter(Boolean);
+      let tripDays = data.days.length;
+      if (datedDays.length > 1) {
+        const first = datedDays[0];
+        const last = datedDays[datedDays.length - 1];
+        tripDays = Math.round((last - first) / 86400000) + 1;
+      }
+      meta.innerHTML = tripDays > 1 ? `<span>${lucideIcon('calendar')} ${tripDays} days</span>` : '';
 
       const warning = document.getElementById('parse-warning');
       if (data.parseWarning === true) {
@@ -962,6 +979,7 @@
 
         const card = document.createElement('div');
         card.className = 'day-card';
+        if (day.date) card.dataset.date = day.date instanceof Date ? day.date.toISOString() : day.date;
         card.innerHTML = `
           <div class="day-header">
             ${day.label ? `<div class="day-label">${esc(day.label)}</div>` : ''}
