@@ -268,6 +268,8 @@ test.describe('Itinerary – shareable link', () => {
     await page.locator('button', { hasText: 'Copy shareable link' }).click();
     const url = await page.evaluate(() => navigator.clipboard.readText());
     expect(url).toContain('?d=');
+    // URL-safe base64 — no percent-encoded chars that break iMessage link detection
+    expect(url).not.toMatch(/%2B|%2F|%3D/i);
   });
 
   test('copy link shows confirmation message', async ({ page }) => {

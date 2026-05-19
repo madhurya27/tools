@@ -995,11 +995,13 @@
     }
 
     function toBase64(str) {
-      return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (_, p) => String.fromCharCode(parseInt(p,16))));
+      return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (_, p) => String.fromCharCode(parseInt(p,16))))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
     }
 
     function fromBase64(b64) {
-      return decodeURIComponent([...atob(b64)].map(c => '%' + c.charCodeAt(0).toString(16).padStart(2,'0')).join(''));
+      const padded = b64.replace(/-/g, '+').replace(/_/g, '/');
+      return decodeURIComponent([...atob(padded)].map(c => '%' + c.charCodeAt(0).toString(16).padStart(2,'0')).join(''));
     }
 
     function copyLink() {
