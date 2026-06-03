@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Phonetic Converter', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/phonetic-converter.html');
+    await page.goto('/tools/phonetic-converter.html');
   });
 
   // ── Initial state ────────────────────────────────────────────────────────────
