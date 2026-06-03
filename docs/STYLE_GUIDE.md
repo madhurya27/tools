@@ -110,7 +110,7 @@ Size via CSS — Lucide defaults to 24×24, override with `width`/`height` on th
 
 ## Page template
 
-Copy `template.html` as the starting point for every new tool.
+Copy `tools/template.html` as the starting point for every new tool.
 
 ---
 
@@ -119,7 +119,7 @@ Copy `template.html` as the starting point for every new tool.
 Add a card to the `<div class="grid">` in `index.html`:
 
 ```html
-<a class="tool-card" href="your-tool.html">
+<a class="tool-card" href="tools/your-tool.html">
   <div class="tool-icon">🔧</div>
   <div class="tool-name">Tool Name</div>
   <div class="tool-desc">Short description of what the tool does.</div>

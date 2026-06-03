@@ -51,7 +51,7 @@ async function visualize(page, text) {
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 test.describe('Itinerary – initial state', () => {
-  test.beforeEach(async ({ page }) => { await page.goto('/itinerary.html'); });
+  test.beforeEach(async ({ page }) => { await page.goto('/tools/itinerary.html'); });
 
   test('input view visible, itinerary view hidden on load', async ({ page }) => {
     await expect(page.locator('#input-view')).toBeVisible();
@@ -67,7 +67,7 @@ test.describe('Itinerary – initial state', () => {
 
 test.describe('Itinerary – structured parsing', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/itinerary.html');
+    await page.goto('/tools/itinerary.html');
     await visualize(page, STRUCTURED);
   });
 
@@ -114,7 +114,7 @@ test.describe('Itinerary – structured parsing', () => {
 
 test.describe('Itinerary – email parsing', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/itinerary.html');
+    await page.goto('/tools/itinerary.html');
     await visualize(page, EMAIL);
   });
 
@@ -150,7 +150,7 @@ test.describe('Itinerary – email parsing', () => {
 
 
 test.describe('Itinerary – parse warning', () => {
-  test.beforeEach(async ({ page }) => { await page.goto('/itinerary.html'); });
+  test.beforeEach(async ({ page }) => { await page.goto('/tools/itinerary.html'); });
 
   test('shows warning for unrecognizable input', async ({ page }) => {
     await visualize(page, UNRECOGNIZABLE);
@@ -160,7 +160,7 @@ test.describe('Itinerary – parse warning', () => {
 
 test.describe('Itinerary – navigation', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/itinerary.html');
+    await page.goto('/tools/itinerary.html');
     await visualize(page, STRUCTURED);
   });
 
@@ -177,7 +177,7 @@ test.describe('Itinerary – navigation', () => {
 });
 
 test.describe('Itinerary – examples', () => {
-  test.beforeEach(async ({ page }) => { await page.goto('/itinerary.html'); });
+  test.beforeEach(async ({ page }) => { await page.goto('/tools/itinerary.html'); });
 
   test('structured example button fills textarea', async ({ page }) => {
     await page.locator('button', { hasText: 'Itinerary example' }).click();
@@ -208,7 +208,7 @@ test.describe('Itinerary – examples', () => {
 
 test.describe('Itinerary – edit mode', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/itinerary.html');
+    await page.goto('/tools/itinerary.html');
     await visualize(page, STRUCTURED);
   });
 
@@ -313,7 +313,7 @@ test.describe('Itinerary – edit mode', () => {
   test('new day slots into correct calendar position', async ({ page }) => {
     // EMAIL has Day 1 (Jun 11), Day 2 (Jun 12), Day 10 (Jun 20)
     // Adding Jun 15 = Day 5 from Jun 11 (offset 4), should slot between Day 2 and Day 10
-    await page.goto('/itinerary.html');
+    await page.goto('/tools/itinerary.html');
     await visualize(page, EMAIL);
     await page.locator('#edit-toggle').click();
     await page.locator('#add-day-btn').click();
@@ -337,7 +337,7 @@ test.describe('Itinerary – edit mode', () => {
 test.describe('Itinerary – shareable link', () => {
   test.beforeEach(async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-    await page.goto('/itinerary.html');
+    await page.goto('/tools/itinerary.html');
     await visualize(page, STRUCTURED);
   });
 
@@ -367,7 +367,7 @@ test.describe('Itinerary – shareable link', () => {
   test('shareable link preserves calendar-span day count', async ({ page, context }) => {
     // Visualize EMAIL (3 cards, 10-day span) then round-trip through the share URL
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-    await page.goto('/itinerary.html');
+    await page.goto('/tools/itinerary.html');
     await visualize(page, EMAIL);
     await page.locator('button', { hasText: 'Copy shareable link' }).click();
     const url = await page.evaluate(() => navigator.clipboard.readText());
@@ -387,7 +387,7 @@ test.describe('Itinerary – shareable link', () => {
 });
 
 test.describe('Itinerary – theme toggle', () => {
-  test.beforeEach(async ({ page }) => { await page.goto('/itinerary.html'); });
+  test.beforeEach(async ({ page }) => { await page.goto('/tools/itinerary.html'); });
 
   test('theme toggle switches between light and dark', async ({ page }) => {
     const before = await page.locator('html').getAttribute('data-theme');

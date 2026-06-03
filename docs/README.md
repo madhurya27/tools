@@ -8,8 +8,8 @@ A collection of small, self-contained browser utilities. No frameworks, no depen
 
 | Tool | Description |
 |------|-------------|
-| [Travel Itinerary](itinerary.html) | Paste flight/hotel emails or a Day 1/Day 2 itinerary to get a clean visual layout |
-| [Phonetic Converter](phonetic-converter.html) | Convert text into NATO phonetic codewords |
+| [Travel Itinerary](../tools/itinerary.html) | Paste flight/hotel emails or a Day 1/Day 2 itinerary to get a clean visual layout |
+| [Phonetic Converter](../tools/phonetic-converter.html) | Convert text into NATO phonetic codewords |
 
 ## Running locally
 
@@ -23,7 +23,7 @@ Tools must be served — opening `.html` files directly as `file://` won't work 
 
 ## Adding a new tool
 
-1. Copy `template.html` to a new file in the root of the repo
+1. Copy `tools/template.html` to a new file in `tools/`
 2. Follow the patterns in [STYLE_GUIDE.md](STYLE_GUIDE.md) for color tokens, layout, and components
 3. Add a card for it in `index.html`
 4. Add a row for it in the table above
