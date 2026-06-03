@@ -162,7 +162,39 @@
       cursor: pointer;
     }
     .add-event-btn:hover { color: var(--text-secondary); border-color: var(--accent); background: none; }
+
+    .add-day-btn {
+      display: none;
+      width: 100%;
+      margin-top: 0.75rem;
+      padding: 0.35rem 0.75rem;
+      background: none;
+      border: 1px dashed var(--border);
+      border-radius: 6px;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      text-align: left;
+      cursor: pointer;
+    }
+    .add-day-btn:hover { color: var(--text-secondary); border-color: var(--accent); background: none; }
+    .edit-mode .add-day-btn { display: block; }
     .edit-mode .add-event-btn { display: block; }
+
+    .day-date-input {
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-primary);
+      padding: 0.1rem 0.2rem;
+      margin-top: 0.1rem;
+      cursor: pointer;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .day-date-input:focus { outline: none; border-bottom-color: var(--accent); }
 
     .edit-mode .event-icon { cursor: pointer; border-radius: 3px; user-select: none; }
     .edit-mode .event-icon:hover { background: var(--bg-card-hover); }
@@ -256,6 +288,7 @@
       <div class="trip-title" id="trip-title" contenteditable="true" spellcheck="false"></div>
       <div class="trip-meta" id="trip-meta"></div>
       <div class="days-grid" id="days-grid"></div>
+      <button class="add-day-btn" id="add-day-btn" onclick="addDay()">+ Add day</button>
     </div>
   </div>
 
@@ -692,24 +725,41 @@
       KEF:'Reykjavik',
     };
 
-    function inferTitleFromEvents(flightEvents, hotelEvents) {
-      // Sort flights by date to find the first outbound destination
-      const sorted = [...flightEvents].filter(e => e.date).sort((a, b) => a.date - b.date);
+    const SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const WEEKDAYS_FULL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
+    function formatDateRange(dates) {
+      const valid = [...dates].filter(Boolean).sort((a, b) => a - b);
+      if (!valid.length) return '';
+      const first = valid[0], last = valid[valid.length - 1];
+      const m1 = SHORT_MONTHS[first.getMonth()], m2 = SHORT_MONTHS[last.getMonth()];
+      const d1 = first.getDate(), d2 = last.getDate(), yr = first.getFullYear();
+      if (first.getTime() === last.getTime()) return `${m1} ${d1}, ${yr}`;
+      if (first.getMonth() === last.getMonth() && first.getFullYear() === last.getFullYear())
+        return `${m1} ${d1}–${d2}, ${yr}`;
+      if (first.getFullYear() === last.getFullYear())
+        return `${m1} ${d1} – ${m2} ${d2}, ${yr}`;
+      return `${m1} ${d1}, ${first.getFullYear()} – ${m2} ${d2}, ${last.getFullYear()}`;
+    }
+
+    function inferTitleFromEvents(flightEvents, hotelEvents, dates) {
+      const sorted = [...flightEvents].filter(e => e.date).sort((a, b) => a.date - b.date);
+      let city = '';
       for (const ev of sorted) {
         const m = ev.text.match(/→\s*([A-Z]{3})/);
-        if (m) {
-          const code = m[1];
-          return `My Trip to ${IATA_CITIES[code] || code}`;
+        if (m) { city = IATA_CITIES[m[1]] || m[1]; break; }
+      }
+      if (!city) {
+        for (const ev of [...hotelEvents].filter(e => e.type === 'hotel-in')) {
+          const name = ev.text.replace(/^check\s+in:\s*/i, '').trim();
+          if (name && name.length > 3) { city = name; break; }
         }
       }
-
-      // Fall back to hotel name (strip check-in/out prefix)
-      for (const ev of [...hotelEvents].filter(e => e.type === 'hotel-in')) {
-        const name = ev.text.replace(/^check\s+in:\s*/i, '').trim();
-        if (name && name.length > 3) return name;
-      }
-
+      const range = dates ? formatDateRange(dates) : '';
+      if (city && range) return `${city} · ${range}`;
+      if (city) return city;
+      if (range) return `My Trip · ${range}`;
       return 'My Trip';
     }
 
@@ -729,7 +779,7 @@
         const m = line.match(/(?:your (?:trip|flight|booking|reservation) (?:to|from|for)|booking confirmed[:\s]+|confirmation\s+(?:for|details?|summary)\s*[:\-]?\s*)(.{3,60})/i);
         if (m) { title = m[1].trim().replace(/[.!]+$/, ''); break; }
       }
-      if (!title) title = inferTitleFromEvents(flightEvents, hotelEvents);
+      if (!title) title = inferTitleFromEvents(flightEvents, hotelEvents, allEvents.map(e => e.date).filter(Boolean));
 
       return { title, days, mode: 'email' };
     }
@@ -782,14 +832,14 @@
       const dayMatch = line.match(/^day\s*(\d+)\s*[-–:·,]?\s*/i);
       if (dayMatch) {
         const rest = line.slice(dayMatch[0].length).trim();
-        return { label: `Day ${dayMatch[1]}`, name: rest || null };
+        return { label: `Day ${dayMatch[1]}`, name: rest || null, date: parseDate(rest) };
       }
       const wdMatch = line.match(/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i);
       if (wdMatch) {
         const rest = line.slice(wdMatch[0].length).replace(/^[,\s–\-]+/, '').trim();
-        return { label: wdMatch[1][0].toUpperCase() + wdMatch[1].slice(1).toLowerCase(), name: rest || null };
+        return { label: wdMatch[1][0].toUpperCase() + wdMatch[1].slice(1).toLowerCase(), name: rest || null, date: parseDate(rest) };
       }
-      return { label: '', name: line };
+      return { label: '', name: line, date: parseDate(line) };
     }
 
     function parseStructured(text) {
@@ -821,7 +871,7 @@
         const flightTexts = days.flatMap(d => d.events).filter(e => e.icon === 'flight').map(e => e.text);
         for (const t of flightTexts) {
           const m = t.match(/→\s*([A-Z]{3})/);
-          if (m && IATA_CITIES[m[1]]) { titleLine = `My Trip to ${IATA_CITIES[m[1]]}`; break; }
+          if (m && IATA_CITIES[m[1]]) { titleLine = IATA_CITIES[m[1]]; break; }
         }
       }
       return { title: titleLine || 'My Trip', days };
@@ -907,6 +957,75 @@
       eventsDiv.insertBefore(ev, btn);
       renderIcons();
       ev.querySelector('.event-text').focus();
+    }
+
+    function addDay() {
+      const grid = document.getElementById('days-grid');
+      const card = document.createElement('div');
+      card.className = 'day-card';
+      card.innerHTML = `
+        <div class="day-header">
+          <div class="day-label">Day ?</div>
+          <input type="date" class="day-date-input" onchange="onDayDateChange(this)">
+        </div>
+        <div class="day-events">
+          <button class="add-event-btn" onclick="addEvent(this)">+ Add event</button>
+        </div>
+      `;
+      grid.appendChild(card);
+      renderIcons();
+      card.querySelector('.day-date-input').focus();
+    }
+
+    function onDayDateChange(input) {
+      const card = input.closest('.day-card');
+      const val = input.value; // "YYYY-MM-DD"
+      if (!val) return;
+      card.dataset.date = val;
+      const d = new Date(val + 'T12:00:00');
+      const name = `${WEEKDAYS_FULL[d.getDay()]}, ${MONTHS_FULL[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+      const nameDiv = document.createElement('div');
+      nameDiv.className = 'day-name';
+      nameDiv.contentEditable = 'true';
+      nameDiv.spellcheck = false;
+      nameDiv.textContent = name;
+      input.replaceWith(nameDiv);
+      reorderAndRelabel();
+      refreshTripMeta();
+      nameDiv.focus();
+    }
+
+    function reorderAndRelabel() {
+      const grid = document.getElementById('days-grid');
+      const cards = [...grid.querySelectorAll('.day-card')];
+      const dated = cards.filter(c => c.dataset.date).sort((a, b) =>
+        a.dataset.date.slice(0, 10).localeCompare(b.dataset.date.slice(0, 10)));
+      const undated = cards.filter(c => !c.dataset.date);
+      [...dated, ...undated].forEach(c => grid.appendChild(c));
+      if (dated.length) {
+        const origin = new Date(dated[0].dataset.date.slice(0, 10) + 'T12:00:00');
+        for (const c of dated) {
+          const n = Math.round((new Date(c.dataset.date.slice(0, 10) + 'T12:00:00') - origin) / 86400000) + 1;
+          c.querySelector('.day-label').textContent = `Day ${n}`;
+        }
+        const lastOriginOffset = Math.round(
+          (new Date(dated[dated.length - 1].dataset.date.slice(0, 10) + 'T12:00:00') - origin) / 86400000) + 2;
+        undated.forEach((c, i) => { c.querySelector('.day-label').textContent = `Day ${lastOriginOffset + i}`; });
+      } else {
+        undated.forEach((c, i) => { c.querySelector('.day-label').textContent = `Day ${i + 1}`; });
+      }
+    }
+
+    function refreshTripMeta() {
+      const cards = [...document.querySelectorAll('#days-grid .day-card[data-date]')];
+      if (!cards.length) return;
+      const dates = cards.map(c => new Date(c.dataset.date.slice(0, 10) + 'T12:00:00')).sort((a, b) => a - b);
+      const tripDays = Math.round((dates[dates.length - 1] - dates[0]) / 86400000) + 1;
+      document.getElementById('trip-meta').innerHTML =
+        tripDays > 1 ? `<span>${lucideIcon('calendar')} ${tripDays} days</span>` : '';
+      const titleEl = document.getElementById('trip-title');
+      const mid = titleEl.textContent.indexOf(' · ');
+      if (mid !== -1) titleEl.textContent = `${titleEl.textContent.slice(0, mid)} · ${formatDateRange(dates)}`;
     }
 
     // Prevent newlines in single-line contenteditable fields
