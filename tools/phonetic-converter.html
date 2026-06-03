@@ -139,6 +139,10 @@
       '5': 'Five', '6': 'Six', '7': 'Seven', '8': 'Eight', '9': 'Nine'
     };
 
+    const inputEl = document.getElementById('input');
+    const outputEl = document.getElementById('output');
+    const outputSection = document.getElementById('output-section');
+
     const html = document.documentElement;
     const btn = document.querySelector('.theme-toggle');
 
@@ -164,28 +168,22 @@
 
     applyTheme(getEffectiveTheme());
 
+    function isWhitespace(ch) { return ch === ' ' || ch === '\n' || ch === '\t'; }
+
     function convert() {
-      const text = document.getElementById('input').value;
+      const text = inputEl.value;
       if (!text.trim()) return;
 
-      const output = document.getElementById('output');
-      const section = document.getElementById('output-section');
-      output.innerHTML = '';
+      outputEl.innerHTML = '';
 
-      const chars = text.toUpperCase().split('');
-      let i = 0;
-
-      while (i < chars.length) {
-        const ch = chars[i];
-
-        if (ch === ' ' || ch === '\n' || ch === '\t') {
-          if (output.lastChild && !output.lastChild.classList.contains('space-marker')) {
+      for (const ch of text.toUpperCase()) {
+        if (isWhitespace(ch)) {
+          if (outputEl.lastChild && !outputEl.lastChild.classList.contains('space-marker')) {
             const sep = document.createElement('span');
             sep.className = 'space-marker';
             sep.textContent = '|';
-            output.appendChild(sep);
+            outputEl.appendChild(sep);
           }
-          i++;
           continue;
         }
 
@@ -198,33 +196,26 @@
 
         const phon = document.createElement('span');
         phon.className = 'phonetic';
+        phon.textContent = NATO[ch] || ch;
+        if (!NATO[ch]) phon.classList.add('unknown');
 
-        if (NATO[ch]) {
-          phon.textContent = NATO[ch];
-        } else {
-          phon.textContent = ch;
-          phon.classList.add('unknown');
-        }
-
-        group.appendChild(orig);
-        group.appendChild(phon);
-        output.appendChild(group);
-        i++;
+        group.append(orig, phon);
+        outputEl.appendChild(group);
       }
 
-      section.classList.add('visible');
+      outputSection.classList.add('visible');
     }
 
     function clearAll() {
-      document.getElementById('input').value = '';
-      document.getElementById('output').innerHTML = '';
-      document.getElementById('output-section').classList.remove('visible');
-      document.getElementById('input').focus();
+      inputEl.value = '';
+      outputEl.innerHTML = '';
+      outputSection.classList.remove('visible');
+      inputEl.focus();
     }
 
     function copyText() {
-      const text = document.getElementById('input').value.toUpperCase().split('').map(ch => {
-        if (ch === ' ' || ch === '\n' || ch === '\t') return ' / ';
+      const text = inputEl.value.toUpperCase().split('').map(ch => {
+        if (isWhitespace(ch)) return ' / ';
         return NATO[ch] || ch;
       }).join(' ').replace(/ \/ \s*/g, ' / ').trim();
 
@@ -239,7 +230,7 @@
       });
     }
 
-    document.getElementById('input').addEventListener('keydown', e => {
+    inputEl.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         convert();

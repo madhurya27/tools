@@ -99,7 +99,25 @@
       background: var(--bg-inset);
       padding: 0.55rem 0.9rem;
       border-bottom: 1px solid var(--border);
+      position: relative;
     }
+
+    .edit-day-date-btn {
+      display: none;
+      position: absolute;
+      top: 0.35rem;
+      right: 0.4rem;
+      background: none;
+      border: none;
+      padding: 0.15rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      border-radius: 4px;
+      line-height: 1;
+    }
+    .edit-day-date-btn svg { display: block; width: 13px; height: 13px; }
+    .edit-day-date-btn:hover { color: var(--accent); background: var(--bg-card-hover); }
+    .edit-mode .edit-day-date-btn { display: block; }
 
     .day-label {
       font-size: 0.65rem;
@@ -328,6 +346,10 @@
     const MONTH_NAMES = ['January','February','March','April','May','June',
                          'July','August','September','October','November','December'];
 
+    function monthIdx(s) {
+      return MONTH_MAP[s.toLowerCase().replace(/[^a-z]/g, '').slice(0, 3)];
+    }
+
     function parseDate(s) {
       if (!s || typeof s !== 'string') return null;
       const MPAT = 'jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?';
@@ -335,11 +357,11 @@
 
       // "June 3, 2025" / "Jun 3rd" / "June 3"
       m = s.match(new RegExp(`\\b(${MPAT})\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:[,\\s]+(\\d{4}))?\\b`, 'i'));
-      if (m) return _mkDate(MONTH_MAP[m[1].toLowerCase().replace(/[^a-z]/g,'').slice(0,3)], parseInt(m[2]), m[3] ? parseInt(m[3]) : _guessYear(parseInt(m[2]), MONTH_MAP[m[1].toLowerCase().replace(/[^a-z]/g,'').slice(0,3)]));
+      if (m) { const mo = monthIdx(m[1]), day = parseInt(m[2]); return _mkDate(mo, day, m[3] ? parseInt(m[3]) : _guessYear(day, mo)); }
 
       // "3 June 2025" / "3rd June"
       m = s.match(new RegExp(`\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(${MPAT})(?:[,\\s]+(\\d{4}))?\\b`, 'i'));
-      if (m) return _mkDate(MONTH_MAP[m[2].toLowerCase().replace(/[^a-z]/g,'').slice(0,3)], parseInt(m[1]), m[3] ? parseInt(m[3]) : _guessYear(parseInt(m[1]), MONTH_MAP[m[2].toLowerCase().replace(/[^a-z]/g,'').slice(0,3)]));
+      if (m) { const mo = monthIdx(m[2]), day = parseInt(m[1]); return _mkDate(mo, day, m[3] ? parseInt(m[3]) : _guessYear(day, mo)); }
 
       // "2025-06-03" / "2025/06/03"
       m = s.match(/\b(\d{4})[-\/](\d{2})[-\/](\d{2})\b/);
@@ -726,8 +748,6 @@
     };
 
     const SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const WEEKDAYS_FULL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    const MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
     function formatDateRange(dates) {
       const valid = [...dates].filter(Boolean).sort((a, b) => a - b);
@@ -963,18 +983,57 @@
       const grid = document.getElementById('days-grid');
       const card = document.createElement('div');
       card.className = 'day-card';
-      card.innerHTML = `
-        <div class="day-header">
-          <div class="day-label">Day ?</div>
-          <input type="date" class="day-date-input" onchange="onDayDateChange(this)">
-        </div>
-        <div class="day-events">
-          <button class="add-event-btn" onclick="addEvent(this)">+ Add event</button>
-        </div>
-      `;
+
+      const header = document.createElement('div');
+      header.className = 'day-header';
+      const label = document.createElement('div');
+      label.className = 'day-label';
+      label.textContent = 'Day ?';
+      const input = document.createElement('input');
+      input.type = 'date';
+      input.className = 'day-date-input';
+      input.addEventListener('change', () => onDayDateChange(input));
+      header.append(label, input);
+
+      const eventsDiv = document.createElement('div');
+      eventsDiv.className = 'day-events';
+      const addEventBtn = document.createElement('button');
+      addEventBtn.className = 'add-event-btn';
+      addEventBtn.textContent = '+ Add event';
+      addEventBtn.addEventListener('click', () => addEvent(addEventBtn));
+      eventsDiv.appendChild(addEventBtn);
+
+      card.append(header, eventsDiv);
       grid.appendChild(card);
       renderIcons();
       card.querySelector('.day-date-input').focus();
+    }
+
+    function makeDateEditBtn() {
+      const btn = document.createElement('button');
+      btn.className = 'edit-day-date-btn';
+      btn.title = 'Change date';
+      btn.innerHTML = lucideIcon('calendar');
+      btn.addEventListener('click', () => editDayDate(btn));
+      return btn;
+    }
+
+    function editDayDate(btn) {
+      const card = btn.closest('.day-card');
+      const header = btn.closest('.day-header');
+      const nameDiv = header.querySelector('.day-name');
+      if (!nameDiv) return;
+      const currentDate = card.dataset.date ? card.dataset.date.slice(0, 10) : '';
+      const input = document.createElement('input');
+      input.type = 'date';
+      input.className = 'day-date-input';
+      input.value = currentDate;
+      let changed = false;
+      input.addEventListener('change', () => { changed = true; onDayDateChange(input); });
+      input.addEventListener('blur', () => { if (!changed && input.parentNode) input.replaceWith(nameDiv); });
+      nameDiv.replaceWith(input);
+      input.focus();
+      try { input.showPicker(); } catch(e) {}
     }
 
     function onDayDateChange(input) {
@@ -983,13 +1042,19 @@
       if (!val) return;
       card.dataset.date = val;
       const d = new Date(val + 'T12:00:00');
-      const name = `${WEEKDAYS_FULL[d.getDay()]}, ${MONTHS_FULL[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+      const name = `${DAY_NAMES[d.getDay()]}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
       const nameDiv = document.createElement('div');
       nameDiv.className = 'day-name';
       nameDiv.contentEditable = 'true';
       nameDiv.spellcheck = false;
       nameDiv.textContent = name;
       input.replaceWith(nameDiv);
+      // Ensure the calendar edit button is present (newly added days don't have it yet)
+      const header = nameDiv.closest('.day-header');
+      if (header && !header.querySelector('.edit-day-date-btn')) {
+        header.appendChild(makeDateEditBtn());
+        renderIcons();
+      }
       reorderAndRelabel();
       refreshTripMeta();
       nameDiv.focus();
@@ -1110,6 +1175,7 @@
             <button class="add-event-btn" onclick="addEvent(this)">+ Add event</button>
           </div>
         `;
+        card.querySelector('.day-header').appendChild(makeDateEditBtn());
         grid.appendChild(card);
       }
       renderIcons();
