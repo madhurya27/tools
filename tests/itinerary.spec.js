@@ -39,6 +39,7 @@ Check-out: Friday, June 20, 2027`;
 
 const UNRECOGNIZABLE = 'Just some random text with no dates or travel info.';
 
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 async function visualize(page, text) {
@@ -129,8 +130,8 @@ test.describe('Itinerary – email parsing', () => {
     await expect(grid).toContainText('Check out');
   });
 
-  test('infers title from flight destination', async ({ page }) => {
-    await expect(page.locator('#trip-title')).toContainText('London');
+  test('infers title from flight destination with date range', async ({ page }) => {
+    await expect(page.locator('#trip-title')).toContainText('London · Jun');
   });
 
   test('trip meta shows calendar span, not card count', async ({ page }) => {
@@ -146,6 +147,7 @@ test.describe('Itinerary – email parsing', () => {
     await expect(labels.nth(2)).toContainText('Day 10');
   });
 });
+
 
 test.describe('Itinerary – parse warning', () => {
   test.beforeEach(async ({ page }) => { await page.goto('/itinerary.html'); });
@@ -267,6 +269,68 @@ test.describe('Itinerary – edit mode', () => {
     await page.keyboard.press('ControlOrMeta+A');
     await page.keyboard.type('My Edited Title');
     await expect(title).toContainText('My Edited Title');
+  });
+
+  test('add day button is visible in edit mode only', async ({ page }) => {
+    await expect(page.locator('#add-day-btn')).toBeHidden();
+    await page.locator('#edit-toggle').click();
+    await expect(page.locator('#add-day-btn')).toBeVisible();
+    await page.locator('#edit-toggle').click();
+    await expect(page.locator('#add-day-btn')).toBeHidden();
+  });
+
+  test('add day button inserts a new day card', async ({ page }) => {
+    await page.locator('#edit-toggle').click();
+    const before = await page.locator('#days-grid .day-card').count();
+    await page.locator('#add-day-btn').click();
+    await expect(page.locator('#days-grid .day-card')).toHaveCount(before + 1);
+  });
+
+  test('new day card has a date input and label', async ({ page }) => {
+    await page.locator('#edit-toggle').click();
+    await page.locator('#add-day-btn').click();
+    const newCard = page.locator('#days-grid .day-card').last();
+    await expect(newCard.locator('.day-label')).toContainText('Day ?');
+    await expect(newCard.locator('input[type="date"]')).toBeVisible();
+  });
+
+  test('new day card has an add event button', async ({ page }) => {
+    await page.locator('#edit-toggle').click();
+    await page.locator('#add-day-btn').click();
+    const newCard = page.locator('#days-grid .day-card').last();
+    await expect(newCard.locator('.add-event-btn')).toBeVisible();
+  });
+
+  test('picking a date replaces date input with day name', async ({ page }) => {
+    await page.locator('#edit-toggle').click();
+    await page.locator('#add-day-btn').click();
+    // Fill date — card will reorder (only dated card → moves first); locate by content after
+    await page.locator('input[type="date"].day-date-input').fill('2027-06-10');
+    await expect(page.locator('.day-name', { hasText: 'June 10, 2027' })).toBeVisible();
+    await expect(page.locator('input[type="date"].day-date-input')).toHaveCount(0);
+  });
+
+  test('new day slots into correct calendar position', async ({ page }) => {
+    // EMAIL has Day 1 (Jun 11), Day 2 (Jun 12), Day 10 (Jun 20)
+    // Adding Jun 15 = Day 5 from Jun 11 (offset 4), should slot between Day 2 and Day 10
+    await page.goto('/itinerary.html');
+    await visualize(page, EMAIL);
+    await page.locator('#edit-toggle').click();
+    await page.locator('#add-day-btn').click();
+    await page.locator('#days-grid .day-card').last().locator('input[type="date"]').fill('2027-06-15');
+    // Day 5 (Jun 15) should now appear before Day 10 (Jun 20)
+    const labels = page.locator('.day-label');
+    const count = await labels.count();
+    const fourthLabel = await labels.nth(count - 2).textContent(); // second-to-last
+    expect(fourthLabel).toContain('Day 5');
+  });
+
+  test('adding a day extending the trip updates trip meta', async ({ page }) => {
+    // STRUCTURED spans Jun 3–5 (3 days); adding Jun 20 extends to 18 days
+    await page.locator('#edit-toggle').click();
+    await page.locator('#add-day-btn').click();
+    await page.locator('#days-grid .day-card').last().locator('input[type="date"]').fill('2027-06-20');
+    await expect(page.locator('#trip-meta')).toContainText('18 days');
   });
 });
 
