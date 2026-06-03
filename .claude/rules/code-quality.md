@@ -1,4 +1,8 @@
-Rules for writing and modifying tool files:
+---
+paths:
+  - "tools/**/*.html"
+  - "index.html"
+---
 
 - **Cache DOM references** used across more than one function at module level: `const inputEl = document.getElementById('input')`.
 - **No duplicate constants** — reuse existing arrays/objects; never redeclare under a different name.
